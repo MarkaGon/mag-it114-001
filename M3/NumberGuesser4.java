@@ -7,11 +7,13 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class NumberGuesser4 {
+    
     private int maxLevel = 1;
     private int level = 1;
     private int strikes = 0;
     private int maxStrikes = 5;
     private int number = -1;
+    private boolean hint = false;
     private boolean pickNewRandom = true;
     private Random random = new Random();
     private String fileName = "ng4.txt";
@@ -31,6 +33,16 @@ public class NumberGuesser4 {
             e.printStackTrace();
         }
     }
+
+    private int generateHint(int hint) {
+        int range = Math.min(Math.max(1, hint / 2), 3);
+        int min = Math.max(1, number - range);
+        int max = Math.min(number + range, min + range);
+        System.out.println(" Its between " + min + " and " + max);
+        return range;
+    }
+
+        
 
     private void loadState() {
         File file = new File(fileName);
@@ -68,7 +80,9 @@ public class NumberGuesser4 {
                     }
                 }
                 lineNumber++;
+                hint = false;
             }
+
         } catch (FileNotFoundException e) {// specific exception
             e.printStackTrace();
         } catch (Exception e2) {// any other unhandled exception
@@ -87,6 +101,7 @@ public class NumberGuesser4 {
      * @param level (level to use as upper bounds)
      * @return number between bounds
      */
+    
     private void generateNewNumber(int level) {
         int range = 10 + ((level - 1) * 5);
         System.out.println("Welcome to level " + level);
@@ -131,10 +146,19 @@ public class NumberGuesser4 {
             pickNewRandom = true;
         } else {
             System.out.println("That's wrong");
+            if (guess < number){
+                System.out.println("HIGHERRR!!!");
+            } else {
+                System.out.println("LOWERRRR!!!");
+            }
             strikes++;
             if (strikes >= maxStrikes) {
                 lose();
                 pickNewRandom = true;
+            } else if (!hint && strikes ==2){
+                int range = 10 + ((level - 1)*5);
+                generateHint(range);
+                hint = true;
             }
         }
     }
