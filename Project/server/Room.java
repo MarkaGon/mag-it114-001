@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import Project.common.Constants;
+import Project.common.Payload;
 
 public class Room implements AutoCloseable {
     // server is a singleton now so we don't need this
@@ -138,6 +139,15 @@ public class Room implements AutoCloseable {
             e.printStackTrace();
         }
         return wasCommand;
+    }
+
+	 public synchronized void broadcastUpdate(Payload p, ServerThread sender) {
+        // Broadcast the update to other clients in the room excluding the sender
+        for (ServerThread client : clients) {
+            if (client != sender) {
+                client.send(p);
+            }
+        }
     }
 
     // Command helper methods

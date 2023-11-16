@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import Project.common.Constants;
+import Project.common.CoordinatePayload;
 import Project.common.Payload;
 import Project.common.PayloadType;
 import Project.common.Phase;
@@ -141,7 +142,7 @@ public class ServerThread extends Thread {
         return send(p);
     }
 
-    private boolean send(Payload payload) {
+    boolean send(Payload payload) {
         try {
             logger.log(Level.FINE, "Outgoing payload: " + payload);
             out.writeObject(payload);
@@ -205,6 +206,18 @@ public class ServerThread extends Thread {
                     logger.log(Level.INFO, "Migrating to lobby on message with null room");
                     Room.joinRoom(Constants.LOBBY, this);
                 }
+            
+            case COORDINATES:
+                if (p instanceof CoordinatePayload) {
+                    CoordinatePayload coordPayload = (CoordinatePayload) p;
+                    if (coordPayload.getColor().equals(getCurrentColor(coordPayload.getX(), coordPayload.getY()))) {
+                        // Avoid sending the update if the color remains the same
+                        return;
+                    }
+                    updateServerBoard(coordPayload.getX(), coordPayload.getY(), coordPayload.getColor());
+                
+                    broadcastCoordinateUpdate(p);
+            }
                 break;
             case GET_ROOMS:
                 Room.getRooms(p.getMessage().trim(), this);
@@ -223,6 +236,20 @@ public class ServerThread extends Thread {
 
         }
 
+    }
+
+    private void updateServerBoard(int x, int y, String color) {
+    }
+
+    private String getCurrentColor(int x, int y) {
+        return "";
+    }
+
+    private void broadcastCoordinateUpdate(Payload p) {
+        Room currentRoom = getCurrentRoom();
+        if (currentRoom != null) {
+            currentRoom.broadcastUpdate(p, this);
+        }
     }
 
     private void cleanup() {

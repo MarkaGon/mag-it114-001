@@ -128,6 +128,7 @@ public enum Server {
             }
             logger.info(String.format("Client %s joining new room %s", client.getClientName(), newRoom.getName()));
             newRoom.addClient(client);
+            client.setCurrentRoom(newRoom);
             return true;
         }
         return false;
