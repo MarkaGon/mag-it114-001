@@ -10,7 +10,10 @@ import java.util.List;
 import java.util.Queue;
 import java.util.logging.Logger;
 
+import Project.common.Board;
 import Project.common.Constants;
+import Project.common.CoordinatePayload;
+import Project.common.Payload;
 
 public enum Server {
     INSTANCE;
@@ -20,6 +23,7 @@ public enum Server {
     private List<Room> rooms = new ArrayList<Room>();
     private Room lobby = null;// default room
     private long nextClientId = 1;
+    private Board board;
 
     private Queue<ServerThread> incomingClients = new LinkedList<ServerThread>();
     // https://www.geeksforgeeks.org/killing-threads-in-java/
@@ -27,6 +31,7 @@ public enum Server {
 
     private void start(int port) {
         this.port = port;
+        board = new Board(100, 100);
         // server listening
         try (ServerSocket serverSocket = new ServerSocket(port);) {
             Socket incoming_client = null;
@@ -41,7 +46,7 @@ public enum Server {
                 logger.info("Waiting for next client");
                 if (incoming_client != null) {
                     logger.info("Client connected");
-                    ServerThread sClient = new ServerThread(incoming_client, lobby);
+                    ServerThread sClient = new ServerThread(incoming_client, lobby, board);
                     sClient.start();
                     incomingClients.add(sClient);
                     incoming_client = null;
@@ -211,6 +216,25 @@ public enum Server {
             Room room = it.next();
             if (room != null) {
                 room.sendMessage(null, message);
+            }
+        }
+    }
+
+    private void broadcastCoordinateUpdate(Payload p) {
+        ServerThread currentThread = (ServerThread) Thread.currentThread();
+        Room currentRoom = currentThread.getCurrentRoom();
+    
+        if (currentRoom != null && p instanceof CoordinatePayload) {
+            CoordinatePayload coordPayload = (CoordinatePayload) p;
+            int x = coordPayload.getX();
+            int y = coordPayload.getY();
+            String color = coordPayload.getColor();
+    
+            
+            if (!color.equals(currentThread.getCurrentColor(x, y))) {
+            
+                currentThread.updateServerBoard(x, y, color);
+                currentRoom.broadcastUpdate(p, currentThread);
             }
         }
     }

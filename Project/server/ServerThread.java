@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import Project.common.Board;
 import Project.common.Constants;
 import Project.common.CoordinatePayload;
 import Project.common.Payload;
@@ -40,12 +41,22 @@ public class ServerThread extends Thread {
         return isRunning;
     }
 
-    public ServerThread(Socket myClient, Room room) {
+    private Board board;
+
+    public ServerThread(Socket myClient, Room room, Board Board) {
         logger.info("ServerThread created");
-        // get communication channels to single client
         this.client = myClient;
         this.currentRoom = room;
+        this.board = board;
 
+    }
+
+    public void updateServerBoard(int x, int y, String color) {
+        board.setColor(x, y, color);
+    }
+
+    public String getCurrentColor(int x, int y) {
+        return board.getColor(x, y);
     }
 
     protected void setClientName(String name) {
@@ -238,17 +249,22 @@ public class ServerThread extends Thread {
 
     }
 
-    private void updateServerBoard(int x, int y, String color) {
-    }
-
-    private String getCurrentColor(int x, int y) {
-        return "";
-    }
-
     private void broadcastCoordinateUpdate(Payload p) {
-        Room currentRoom = getCurrentRoom();
-        if (currentRoom != null) {
-            currentRoom.broadcastUpdate(p, this);
+        if (p instanceof CoordinatePayload) {
+            CoordinatePayload coordPayload = (CoordinatePayload) p;
+            int x = coordPayload.getX();
+            int y = coordPayload.getY();
+            String color = coordPayload.getColor();
+    
+        
+            if (!color.equals(getCurrentColor(x, y))) {
+                
+                updateServerBoard(x, y, color);
+                Room currentRoom = getCurrentRoom();
+                if (currentRoom != null) {
+                    currentRoom.broadcastUpdate(p, this);
+                }
+            }
         }
     }
 
