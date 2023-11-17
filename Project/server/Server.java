@@ -24,6 +24,7 @@ public enum Server {
     private Room lobby = null;// default room
     private long nextClientId = 1;
     private Board board;
+    private String[][] serverBoard;
 
     private Queue<ServerThread> incomingClients = new LinkedList<ServerThread>();
     // https://www.geeksforgeeks.org/killing-threads-in-java/
@@ -59,6 +60,14 @@ public enum Server {
         } finally {
             logger.info("Closing Server Socket");
         }
+    }
+
+    private Server() { 
+        serverBoard = new String[10][10];
+    }
+
+    private void updateServerBoard(int x, int y, String color) {
+        serverBoard[x][y] = color;
     }
 
     void startQueueManager() {

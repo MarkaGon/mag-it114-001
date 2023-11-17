@@ -218,17 +218,15 @@ public class ServerThread extends Thread {
                     Room.joinRoom(Constants.LOBBY, this);
                 }
             
-            case COORDINATES:
+                case COORDINATES:
                 if (p instanceof CoordinatePayload) {
                     CoordinatePayload coordPayload = (CoordinatePayload) p;
                     if (coordPayload.getColor().equals(getCurrentColor(coordPayload.getX(), coordPayload.getY()))) {
-                        // Avoid sending the update if the color remains the same
                         return;
                     }
                     updateServerBoard(coordPayload.getX(), coordPayload.getY(), coordPayload.getColor());
-                
                     broadcastCoordinateUpdate(p);
-            }
+                }
                 break;
             case GET_ROOMS:
                 Room.getRooms(p.getMessage().trim(), this);
