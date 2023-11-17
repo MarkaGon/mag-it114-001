@@ -1,8 +1,10 @@
 package Project.server;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
+import java.util.Random;
 
 import Project.common.Constants;
 import Project.common.Phase;
@@ -12,7 +14,11 @@ public class GameRoom extends Room {
     Phase currentPhase = Phase.READY;
     private static Logger logger = Logger.getLogger(GameRoom.class.getName());
     private TimedEvent readyTimer = null;
+    private TimedEvent gameTimer = null;
     private ConcurrentHashMap<Long, ServerPlayer> players = new ConcurrentHashMap<Long, ServerPlayer>();
+    private String currentWord = null;
+    private String wordSelect = getRandomWord();
+    private static final String[] wordList = {"car", "House", "Horse", "Doctor", "Banana"};
 
     public GameRoom(String name) {
         super(name);
@@ -85,9 +91,11 @@ public class GameRoom extends Room {
     private void start() {
         updatePhase(Phase.IN_PROGRESS);
         sendMessage(null, "Session started");
-        
-        TimedEvent gameTimer = new TimedEvent(300, () -> {
-            
+        String wordToDraw = getRandomWord();
+        System.out.println("Draw a: " + wordToDraw);
+        gameTimer = new TimedEvent(300, () -> {
+
+
             clearBoards();
             resetSession();
             sendMessage(null, "Game Timer expired. Session ended.");
@@ -95,6 +103,16 @@ public class GameRoom extends Room {
             sendMessage(null, String.format("Running session, time remaining: %s", time));
         });
     }
+
+    
+
+    private String getRandomWord(){
+        Random random = new Random();
+        int select = random.nextInt(wordList.length);
+        return wordList[select];
+    }
+
+
 
 
     private void clearBoards() {
