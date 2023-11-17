@@ -58,9 +58,11 @@ public class TimedEvent {
      * the timer.
      * 
      * @param callback
+     * @return 
      */
-    public void setTickCallback(Consumer<Integer> callback) {
+    public TimedEvent setTickCallback(Consumer<Integer> callback) {
         tickCallback = callback;
+        return null;
     }
 
     /**

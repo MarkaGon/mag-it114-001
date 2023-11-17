@@ -84,12 +84,28 @@ public class GameRoom extends Room {
 
     private void start() {
         updatePhase(Phase.IN_PROGRESS);
-        // TODO example
         sendMessage(null, "Session started");
-        new TimedEvent(30, () -> resetSession())
-                .setTickCallback((time) -> {
-                    sendMessage(null, String.format("Example running session, time remaining: %s", time));
-                });
+        
+        TimedEvent gameTimer = new TimedEvent(300, () -> {
+            
+            clearBoards();
+            resetSession();
+            sendMessage(null, "Game Timer expired. Session ended.");
+        }).setTickCallback((time) -> {
+            sendMessage(null, String.format("Running session, time remaining: %s", time));
+        });
+    }
+
+
+    private void clearBoards() {
+        Iterator<ServerPlayer> iter = players.values().iterator();
+        while (iter.hasNext()) {
+            ServerPlayer client = iter.next();
+            boolean success = client.getClient().sendClearBoard();
+            if (!success) {
+                handleDisconnect(client);
+            }
+        }
     }
 
     private synchronized void resetSession() {

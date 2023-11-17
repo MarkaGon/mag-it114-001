@@ -279,4 +279,8 @@ public class ServerThread extends Thread {
     public boolean sendPhaseSync(Phase currentPhase) {
         return false;
     }
+
+    public boolean sendClearBoard() {
+        return false;
+    }
 }
