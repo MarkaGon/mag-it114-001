@@ -10,10 +10,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.logging.Logger;
 
-import Project.common.Board;
 import Project.common.Constants;
-import Project.common.CoordinatePayload;
-import Project.common.Payload;
 
 public enum Server {
     INSTANCE;
@@ -23,8 +20,6 @@ public enum Server {
     private List<Room> rooms = new ArrayList<Room>();
     private Room lobby = null;// default room
     private long nextClientId = 1;
-    private Board board;
-    private String[][] serverBoard;
 
     private Queue<ServerThread> incomingClients = new LinkedList<ServerThread>();
     // https://www.geeksforgeeks.org/killing-threads-in-java/
@@ -32,13 +27,12 @@ public enum Server {
 
     private void start(int port) {
         this.port = port;
-        board = new Board(100, 100);
         // server listening
         try (ServerSocket serverSocket = new ServerSocket(port);) {
             Socket incoming_client = null;
             logger.info(String.format("Server is listening on port %s", port));
             isRunning = true;
-            // Room.server = this;//since server is a singleton now we don't need this
+            Room.server = this;
             startQueueManager();
             // create a lobby on start
             lobby = new Room(Constants.LOBBY);
@@ -47,7 +41,7 @@ public enum Server {
                 logger.info("Waiting for next client");
                 if (incoming_client != null) {
                     logger.info("Client connected");
-                    ServerThread sClient = new ServerThread(incoming_client, lobby, board);
+                    ServerThread sClient = new ServerThread(incoming_client, lobby);
                     sClient.start();
                     incomingClients.add(sClient);
                     incoming_client = null;
@@ -60,14 +54,6 @@ public enum Server {
         } finally {
             logger.info("Closing Server Socket");
         }
-    }
-
-    private Server() { 
-        serverBoard = new String[10][10];
-    }
-
-    private void updateServerBoard(int x, int y, String color) {
-        serverBoard[x][y] = color;
     }
 
     void startQueueManager() {
@@ -142,7 +128,6 @@ public enum Server {
             }
             logger.info(String.format("Client %s joining new room %s", client.getClientName(), newRoom.getName()));
             newRoom.addClient(client);
-            client.setCurrentRoom(newRoom);
             return true;
         }
         return false;
@@ -225,25 +210,6 @@ public enum Server {
             Room room = it.next();
             if (room != null) {
                 room.sendMessage(null, message);
-            }
-        }
-    }
-
-    private void broadcastCoordinateUpdate(Payload p) {
-        ServerThread currentThread = (ServerThread) Thread.currentThread();
-        Room currentRoom = currentThread.getCurrentRoom();
-    
-        if (currentRoom != null && p instanceof CoordinatePayload) {
-            CoordinatePayload coordPayload = (CoordinatePayload) p;
-            int x = coordPayload.getX();
-            int y = coordPayload.getY();
-            String color = coordPayload.getColor();
-    
-            
-            if (!color.equals(currentThread.getCurrentColor(x, y))) {
-            
-                currentThread.updateServerBoard(x, y, color);
-                currentRoom.broadcastUpdate(p, currentThread);
             }
         }
     }

@@ -6,12 +6,9 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import Project.common.Constants;
-import Project.common.Payload;
 
 public class Room implements AutoCloseable {
-    // server is a singleton now so we don't need this
-    // protected static Server server;// used to refer to accessible server
-    // functions
+    protected static Server server;// used to refer to accessible server functions
     private String name;
     protected List<ServerThread> clients = new ArrayList<ServerThread>();
     private boolean isRunning = false;
@@ -141,15 +138,6 @@ public class Room implements AutoCloseable {
         return wasCommand;
     }
 
-	 public synchronized void broadcastUpdate(Payload p, ServerThread sender) {
-        // Broadcast the update to other clients in the room excluding the sender
-        for (ServerThread client : clients) {
-            if (client != sender) {
-                client.send(p);
-            }
-        }
-    }
-
     // Command helper methods
     protected static void getRooms(String query, ServerThread client) {
         String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
@@ -158,7 +146,7 @@ public class Room implements AutoCloseable {
     }
 
     protected static void createRoom(String roomName, ServerThread client) {
-        if (Server.INSTANCE.createNewRoom(roomName)) {
+        if (server.createNewRoom(roomName)) {
             Room.joinRoom(roomName, client);
         } else {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, String.format("Room %s already exists", roomName));
@@ -173,7 +161,7 @@ public class Room implements AutoCloseable {
      * @param client
      */
     protected static void joinRoom(String roomName, ServerThread client) {
-        if (!Server.INSTANCE.joinRoom(roomName, client)) {
+        if (!server.joinRoom(roomName, client)) {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, String.format("Room %s doesn't exist", roomName));
         }
     }
@@ -234,7 +222,7 @@ public class Room implements AutoCloseable {
     }
 
     public void close() {
-        Server.INSTANCE.removeRoom(this);
+        server.removeRoom(this);
         isRunning = false;
         clients.clear();
     }

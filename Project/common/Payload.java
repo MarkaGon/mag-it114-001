@@ -19,8 +19,6 @@ public class Payload implements Serializable {
         this.payloadType = payloadType;
     }
 
-    
-
     /**
      * Who the payload is from
      */
@@ -43,9 +41,6 @@ public class Payload implements Serializable {
     public void setClientId(long clientId) {
         this.clientId = clientId;
     }
-
-
-        
 
     /**
      * Generic text based message

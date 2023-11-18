@@ -1,5 +1,7 @@
 package Project.common;
 
+/* Originally based off of https://gist.github.com/MattToegel/c55747f26c5092d6362678d5b1729ec6 */
+
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
@@ -58,11 +60,9 @@ public class TimedEvent {
      * the timer.
      * 
      * @param callback
-     * @return 
      */
-    public TimedEvent setTickCallback(Consumer<Integer> callback) {
+    public void setTickCallback(Consumer<Integer> callback) {
         tickCallback = callback;
-        return null;
     }
 
     /**
