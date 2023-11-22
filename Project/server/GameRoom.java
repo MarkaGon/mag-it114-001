@@ -17,7 +17,9 @@ import Project.common.exceptions.InvalidMoveException;
 import Project.server.CharacterFactory.ControllerType;
 import Project.common.Constants;
 import Project.common.Grid;
+import Project.common.PayloadType;
 import Project.common.Phase;
+import Project.common.PositionPayload;
 import Project.common.TimedEvent;
 import Project.common.CellData;
 import Project.common.Character;
@@ -31,6 +33,7 @@ public class GameRoom extends Room {
     private Character currentTurnCharacter = null;
     Random rand = new Random();
     private List<Character> turnOrder = new ArrayList<Character>();
+    private List<ServerThread> connectedClients = new ArrayList<>();
 
     public GameRoom(String name) {
         super(name);
@@ -288,12 +291,23 @@ public class GameRoom extends Room {
         }
     }
 
-    public void handleMove(int x, int y, ServerThread client) {
+    public void handleMove(int x, int y, String color, ServerThread client) {
         ServerPlayer currentPlayer = (ServerPlayer) currentTurnCharacter.getController();
         if (currentPlayer.getClient().getClientId() != client.getClientId()) {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, "It's not your turn");
             return;
         }
+
+        String currentColor = currentTurnCharacter.getColor(); 
+        PositionPayload clientMove = new PositionPayload();
+        clientMove.setCoord(x, y);
+        clientMove.setColor(currentColor);
+
+        if (currentColor.equals(clientMove.getColor())) {
+            return;
+        }
+
+
         if (currentTurnCharacter.isInCell()) {
             logger.info(currentTurnCharacter.getName() + " is in a cell before move");
         }
@@ -306,7 +320,10 @@ public class GameRoom extends Room {
         if (success) {
             cancelReadyTimer();
             sendMessage(null, String.format("%s moved to cell %s,%s", currentTurnCharacter.getName(), x, y));
-            // Sync cells around target cell
+    
+            // Broadcast the move to other clients
+            broadcastMove(x, y, currentColor, client);
+    
             List<CellData> startCells = grid.getCellsARoundPoint(x, y);
             syncCells(startCells);
             /*
@@ -335,6 +352,18 @@ public class GameRoom extends Room {
         }
     }
 
+    private void broadcastMove(int x, int y, String color, ServerThread currentPlayerThread) {
+        PositionPayload movePayload = new PositionPayload(PayloadType.MOVE);
+        movePayload.setCoord(x, y);
+        movePayload.setColor(color);
+    
+        // Iterate through connected clients and send the move payload
+        for (ServerThread otherClient : connectedClients) {
+            if (otherClient != null && otherClient != currentPlayerThread) {
+                otherClient.send(movePayload);
+            }
+        }
+    }
     private void endDungeon(){
         //TODO give experience / rewards
 

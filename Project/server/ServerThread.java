@@ -99,6 +99,14 @@ public class ServerThread extends Thread {
         pp.setPayloadType(PayloadType.GRID); //override default payload type
         return send(pp);
     }
+
+    public boolean sendColor(String color){
+        PositionPayload pp = new PositionPayload();
+        pp.setColor(color);
+        return send(pp);
+
+    }
+
     public boolean sendCurrentTurn(long clientId) {
         Payload p = new Payload();
         p.setPayloadType(PayloadType.TURN);
@@ -182,7 +190,7 @@ public class ServerThread extends Thread {
         return send(p);
     }
 
-    private boolean send(Payload payload) {
+    boolean send(Payload payload) {
         try {
             logger.log(Level.FINE, "Outgoing payload: " + payload);
             out.writeObject(payload);
@@ -284,7 +292,7 @@ public class ServerThread extends Thread {
             case MOVE:
                 try {
                     PositionPayload pp = (PositionPayload) p;
-                    ((GameRoom) currentRoom).handleMove(pp.getX(), pp.getY(), this);
+                    ((GameRoom) currentRoom).handleMove(pp.getX(), pp.getY(),pp.getColor(), this);
                 } catch (Exception e) {
                     logger.severe(String.format("There was a problem during position handling %s", e.getMessage()));
                     e.printStackTrace();

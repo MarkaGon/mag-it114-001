@@ -234,4 +234,8 @@ public class Character implements Serializable{
     public boolean isInCell(){
         return currentCell != null;
     }
+
+    public String getColor() {
+        return null;
+    }
 }

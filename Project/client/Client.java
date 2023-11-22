@@ -194,20 +194,24 @@ public enum Client {
             try {
                 int x = Integer.parseInt(coord[0].trim());
                 int y = Integer.parseInt(coord[1].trim());
-                sendMove(x, y);
+                String color = coord[2].trim();
+                sendMove(x, y, color);
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            return true;
         }
         return false;
     }
 
     // Send methods
-    protected void sendMove(int x, int y) throws IOException {
+    protected void sendMove(int x, int y, String color) throws IOException {
         PositionPayload pp = new PositionPayload();
         pp.setCoord(x, y);
+        pp.setColor(color);
         out.writeObject(pp);
     }
+    
 
     protected void sendLoadCharacter(String characterCode) throws IOException {
         CharacterPayload cp = new CharacterPayload();
