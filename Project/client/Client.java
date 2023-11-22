@@ -39,6 +39,9 @@ public enum Client {
     private long myClientId = Constants.DEFAULT_CLIENT_ID;
     private static Logger logger = Logger.getLogger(Client.class.getName());
 
+    private int lastX = -1;
+    private int lastY = -1;
+
     private Hashtable<Long, ClientPlayer> userList = new Hashtable<Long, ClientPlayer>();
 
     Grid clientGrid = new Grid();
@@ -206,11 +209,19 @@ public enum Client {
 
     // Send methods
     protected void sendMove(int x, int y, String color) throws IOException {
-        PositionPayload pp = new PositionPayload();
-        pp.setCoord(x, y);
-        pp.setColor(color);
-        out.writeObject(pp);
+        
+        if (x != lastX || y != lastY){
+            PositionPayload pp = new PositionPayload();
+            pp.setCoord(x, y);
+            pp.setColor(color);
+            out.writeObject(pp);
+
+            lastX = x;
+            lastY = y;
+        }
     }
+
+
     
 
     protected void sendLoadCharacter(String characterCode) throws IOException {

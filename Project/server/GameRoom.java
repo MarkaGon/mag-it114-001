@@ -307,9 +307,10 @@ public class GameRoom extends Room {
             return;
         }
 
-
-        if (currentTurnCharacter.isInCell()) {
-            logger.info(currentTurnCharacter.getName() + " is in a cell before move");
+        if (x != clientMove.getX() || y != clientMove.getY()) {
+            if (currentTurnCharacter.isInCell()) {
+                logger.info(currentTurnCharacter.getName() + " is in a cell before move");
+            }
         }
         boolean success = false;
         try {
@@ -357,7 +358,6 @@ public class GameRoom extends Room {
         movePayload.setCoord(x, y);
         movePayload.setColor(color);
     
-        // Iterate through connected clients and send the move payload
         for (ServerThread otherClient : connectedClients) {
             if (otherClient != null && otherClient != currentPlayerThread) {
                 otherClient.send(movePayload);
