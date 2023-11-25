@@ -205,7 +205,7 @@ public class GameRoom extends Room {
     }
 
     private void generateDungeon() {
-        int width = 5, height = 5;
+        int width = 6, height = 6;
         if (grid.hasCells()) {
             grid.reset();
         }

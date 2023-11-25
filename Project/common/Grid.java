@@ -37,29 +37,10 @@ public class Grid {
         // Create walls for the entire grid initially
         for (int row = 0; row < rows; row++) {
             for (int column = 0; column < columns; column++) {
-                cells[row][column] = new WallCell(row, column);
+                cells[row][column] = null;
             }
         }
 
-        // Rule 1: Generate Start and End doors
-        int startEdge = (int) (Math.random() * 4);
-        int endEdge = (startEdge + 2) % 4; // Rule 2: Ensure end door is on a different edge
-        // Generate Start Door
-        DoorCell startDoor = GridHelpers.generateDoorOnEdge(rows, columns, startEdge);
-        this.start = startDoor;
-        cells[startDoor.getX()][startDoor.getY()] = this.start;
-
-        // Generate End Door
-        DoorCell endDoor = GridHelpers.generateDoorOnEdge(rows, columns, endEdge);
-        this.end = endDoor;
-        this.end.setEnd(true);
-        cells[endDoor.getX()][endDoor.getY()] = this.end;
-
-        // Rule 3: Generate a valid path from start door to end door
-        GridHelpers.generatePath(startDoor, endDoor, cells);
-
-        // Rule 4: Generate random branches from the main path
-        GridHelpers.addBranches(cells);
         logger.info(String.format("Finished generating %s x %s grid", rows, columns));
     }
 
@@ -337,11 +318,5 @@ public class Grid {
         Grid g = new Grid();
         g.build(25, 25);
         GridHelpers.printGrid(g.cells);
-
-        Cell[][] n = GridHelpers.getCellsWithinRange2D(g.getStartDoor().getX(), g.getStartDoor().getY(), g.cells);
-        GridHelpers.printGrid(n);
-        System.out.println("");
-        n = GridHelpers.getCellsWithinRange2D(g.getEndDoor().getX(), g.getEndDoor().getY(), g.cells);
-        GridHelpers.printGrid(n);
     }
 }
