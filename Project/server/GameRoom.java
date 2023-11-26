@@ -3,12 +3,16 @@ package Project.server;
 import Project.common.Utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import Project.common.Character.ActionType;
 import Project.common.Character.CharacterType;
@@ -25,6 +29,7 @@ import Project.common.CellData;
 import Project.common.Character;
 
 public class GameRoom extends Room {
+    private static final Date GAME_TIME = null;
     Phase currentPhase = Phase.READY;
     private static Logger logger = Logger.getLogger(GameRoom.class.getName());
     private TimedEvent readyTimer = null;
@@ -34,11 +39,41 @@ public class GameRoom extends Room {
     Random rand = new Random();
     private List<Character> turnOrder = new ArrayList<Character>();
     private List<ServerThread> connectedClients = new ArrayList<>();
+    private String drawWord;
+    private Timer gametTimer;
+    private final int GameTime = 90000; // 90 seconds
+    private List<String> words = Arrays.asList("Sunflower", "Dragon", "Apple", "Guitar", "Robot", "clown", "falling", "Rain", "Galaxy", "flute");
+
 
     public GameRoom(String name) {
         super(name);
-        // TODO Auto-generated constructor stub
+        Timer gameTimer = new Timer();
+        gameTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                clearGrid();
+            }
+        }, GAME_TIME);
+        
+        drawWord = words.get(rand.nextInt(words.size()));
+     }
+
+     private void clearGrid() {
+        grid.reset();
+        syncGridReset();
     }
+
+    public void handleGuess(String guess, ServerThread client) {
+;
+        if (guess.equals(drawWord)) {
+            clearGrid();
+            client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Correct guess! The grid has been cleared.");
+        } else {
+            client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Incorrect guess. Try again.");
+        }
+    }
+
+
 
     /**
      * Attempts to lookup and load a character
@@ -364,6 +399,8 @@ public class GameRoom extends Room {
             }
         }
     }
+
+
     private void endDungeon(){
         //TODO give experience / rewards
 
