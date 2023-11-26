@@ -39,24 +39,26 @@ public class GameRoom extends Room {
     Random rand = new Random();
     private List<Character> turnOrder = new ArrayList<Character>();
     private List<ServerThread> connectedClients = new ArrayList<>();
+    private ServerThread drawer;
     private String drawWord;
-    private Timer gametTimer;
+    private Timer gameTimer;
     private final int GameTime = 90000; // 90 seconds
     private List<String> words = Arrays.asList("Sunflower", "Dragon", "Apple", "Guitar", "Robot", "clown", "falling", "Rain", "Galaxy", "flute");
 
 
     public GameRoom(String name) {
         super(name);
-        Timer gameTimer = new Timer();
+        gameTimer = new Timer();
         gameTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 clearGrid();
             }
-        }, GAME_TIME);
+        }, GameTime);
         
         drawWord = words.get(rand.nextInt(words.size()));
-     }
+        drawer = connectedClients.get(rand.nextInt(connectedClients.size()));
+    }
 
      private void clearGrid() {
         grid.reset();
@@ -64,7 +66,6 @@ public class GameRoom extends Room {
     }
 
     public void handleGuess(String guess, ServerThread client) {
-;
         if (guess.equals(drawWord)) {
             clearGrid();
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Correct guess! The grid has been cleared.");
@@ -327,9 +328,8 @@ public class GameRoom extends Room {
     }
 
     public void handleMove(int x, int y, String color, ServerThread client) {
-        ServerPlayer currentPlayer = (ServerPlayer) currentTurnCharacter.getController();
-        if (currentPlayer.getClient().getClientId() != client.getClientId()) {
-            client.sendMessage(Constants.DEFAULT_CLIENT_ID, "It's not your turn");
+        if (client != drawer) {
+            client.sendMessage(Constants.DEFAULT_CLIENT_ID, "It's not your turn to draw");
             return;
         }
 
