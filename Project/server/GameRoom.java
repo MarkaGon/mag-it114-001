@@ -29,7 +29,6 @@ import Project.common.CellData;
 import Project.common.Character;
 
 public class GameRoom extends Room {
-    private static final Date GAME_TIME = null;
     Phase currentPhase = Phase.READY;
     private static Logger logger = Logger.getLogger(GameRoom.class.getName());
     private TimedEvent readyTimer = null;
@@ -389,7 +388,7 @@ public class GameRoom extends Room {
     }
 
     private void broadcastMove(int x, int y, String color, ServerThread currentPlayerThread) {
-        PositionPayload movePayload = new PositionPayload(PayloadType.MOVE);
+        PositionPayload movePayload = new PositionPayload(PayloadType.DRAW);
         movePayload.setCoord(x, y);
         movePayload.setColor(color);
     

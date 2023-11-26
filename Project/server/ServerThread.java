@@ -289,7 +289,7 @@ public class ServerThread extends Thread {
                     e.printStackTrace();
                 }
                 break;
-            case MOVE:
+            case DRAW:
                 try {
                     PositionPayload pp = (PositionPayload) p;
                     ((GameRoom) currentRoom).handleMove(pp.getX(), pp.getY(),pp.getColor(), this);

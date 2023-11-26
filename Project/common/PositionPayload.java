@@ -10,7 +10,7 @@ public class PositionPayload extends Payload {
 
     public PositionPayload() {
         // default to hide
-        this(PayloadType.MOVE);
+        this(PayloadType.DRAW);
     }
 
     public void setX(int x) {
