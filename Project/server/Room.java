@@ -10,7 +10,7 @@ import Project.common.Constants;
 public class Room implements AutoCloseable {
     protected static Server server;// used to refer to accessible server functions
     private String name;
-    protected List<ServerThread> clients = new ArrayList<ServerThread>();
+    private List<ServerThread> clients = new ArrayList<ServerThread>();
     private boolean isRunning = false;
     // Commands
     private final static String COMMAND_TRIGGER = "/";
@@ -214,7 +214,7 @@ public class Room implements AutoCloseable {
         }
     }
 
-    protected void handleDisconnect(Iterator<ServerThread> iter, ServerThread client) {
+    private void handleDisconnect(Iterator<ServerThread> iter, ServerThread client) {
         iter.remove();
         logger.info(String.format("Removed client %s", client.getClientName()));
         sendMessage(null, client.getClientName() + " disconnected");

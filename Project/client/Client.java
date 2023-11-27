@@ -5,23 +5,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Map.Entry;
 import java.util.logging.Logger;
 
-import Project.common.CharacterPayload;
 import Project.common.Constants;
-import Project.common.Grid;
 import Project.common.Payload;
 import Project.common.PayloadType;
-import Project.common.PositionPayload;
 import Project.common.RoomResultPayload;
-import Project.common.Character.CharacterType;
-import Project.common.CellPayload;
-import Project.common.Character;
 
 public enum Client {
     Instance;
@@ -34,17 +27,11 @@ public enum Client {
     boolean isRunning = false;
     private Thread inputThread;
     private Thread fromServerThread;
-    // private String clientName = "";
-    private ClientPlayer myPlayer = new ClientPlayer();
+    private String clientName = "";
     private long myClientId = Constants.DEFAULT_CLIENT_ID;
     private static Logger logger = Logger.getLogger(Client.class.getName());
 
-    private int lastX = -1;
-    private int lastY = -1;
-
-    private Hashtable<Long, ClientPlayer> userList = new Hashtable<Long, ClientPlayer>();
-
-    Grid clientGrid = new Grid();
+    private Hashtable<Long, String> userList = new Hashtable<Long, String>();
 
     public boolean isConnected() {
         if (server == null) {
@@ -116,8 +103,8 @@ public enum Client {
         if (text.startsWith("/name")) {
             String[] parts = text.split(" ");
             if (parts.length >= 2) {
-                myPlayer.setClientName(parts[1].trim());
-                System.out.println("Name set to " + myPlayer.getClientName());
+                clientName = parts[1].trim();
+                System.out.println("Name set to " + clientName);
             }
             return true;
         }
@@ -136,7 +123,7 @@ public enum Client {
     @Deprecated // removing in Milestone3
     private boolean processClientCommand(String text) throws IOException {
         if (isConnection(text)) {
-            if (myPlayer.getClientName().isBlank()) {
+            if (clientName.isBlank()) {
                 System.out.println("You must set your name before you can connect via: /name your_name");
                 return true;
             }
@@ -165,42 +152,14 @@ public enum Client {
             sendListRooms(query);
             return true;
         } else if (text.equalsIgnoreCase("/users")) {
-            Iterator<Entry<Long, ClientPlayer>> iter = userList.entrySet().iterator();
+            Iterator<Entry<Long, String>> iter = userList.entrySet().iterator();
             System.out.println("Listing Local User List:");
             if (userList.size() == 0) {
                 System.out.println("No local users in list");
             }
             while (iter.hasNext()) {
-                Entry<Long, ClientPlayer> user = iter.next();
-                System.out.println(String.format("%s[%s]", user.getValue().getClientName(), user.getKey()));
-            }
-            return true;
-        } else if (text.equalsIgnoreCase("/ready")) {
-            sendReadyStatus();
-        } else if (text.startsWith("/createcharacter")) {
-            String characterType = text.split("/createcharacter")[1].trim().toUpperCase();
-            System.out.println("Checking Type: " + characterType);
-            try {
-                CharacterType cType = CharacterType.valueOf(characterType);
-                sendCreateCharacter(cType);
-            } catch (Exception e) {
-                System.out.println("Please enter a valid character type: " + Arrays.asList(CharacterType.values()));
-            }
-            return true;
-
-        } else if (text.startsWith("/loadcharacter")) {
-            String characterCode = text.split("/loadcharacter")[1].trim();
-            sendLoadCharacter(characterCode);
-        } else if (text.startsWith("/move")) {
-            String coordStr = text.split("/move")[1].trim();
-            String[] coord = coordStr.split(",");
-            try {
-                int x = Integer.parseInt(coord[0].trim());
-                int y = Integer.parseInt(coord[1].trim());
-                String color = coord[2].trim();
-                sendMove(x, y, color);
-            } catch (Exception e) {
-                e.printStackTrace();
+                Entry<Long, String> user = iter.next();
+                System.out.println(String.format("%s[%s]", user.getValue(), user.getKey()));
             }
             return true;
         }
@@ -208,42 +167,6 @@ public enum Client {
     }
 
     // Send methods
-    protected void sendMove(int x, int y, String color) throws IOException {
-        
-        if (x != lastX || y != lastY){
-            PositionPayload pp = new PositionPayload();
-            pp.setCoord(x, y);
-            pp.setColor(color);
-            out.writeObject(pp);
-
-            lastX = x;
-            lastY = y;
-        }
-    }
-
-
-    
-
-    protected void sendLoadCharacter(String characterCode) throws IOException {
-        CharacterPayload cp = new CharacterPayload();
-        Character c = new Character();
-        c.setCode(characterCode);
-        cp.setCharacter(c);
-        out.writeObject(cp);
-    }
-
-    protected void sendCreateCharacter(CharacterType characterType) throws IOException {
-        CharacterPayload cp = new CharacterPayload();
-        cp.setCharacterType(characterType);
-        out.writeObject(cp);
-    }
-
-    protected void sendReadyStatus() throws IOException {
-        Payload p = new Payload();
-        p.setPayloadType(PayloadType.READY);
-        out.writeObject(p);
-    }
-
     protected void sendListRooms(String query) throws IOException {
         Payload p = new Payload();
         p.setPayloadType(PayloadType.GET_ROOMS);
@@ -274,7 +197,7 @@ public enum Client {
     protected void sendConnect() throws IOException {
         Payload p = new Payload();
         p.setPayloadType(PayloadType.CONNECT);
-        p.setClientName(myPlayer.getClientName());
+        p.setClientName(clientName);
         out.writeObject(p);
     }
 
@@ -282,7 +205,7 @@ public enum Client {
         Payload p = new Payload();
         p.setPayloadType(PayloadType.MESSAGE);
         p.setMessage(message);
-        p.setClientName(myPlayer.getClientName());
+        p.setClientName(clientName);
         out.writeObject(p);
     }
 
@@ -355,7 +278,7 @@ public enum Client {
 
     protected String getClientNameById(long id) {
         if (userList.containsKey(id)) {
-            return userList.get(id).getClientName();
+            return userList.get(id);
         }
         if (id == Constants.DEFAULT_CLIENT_ID) {
             return "[Server]";
@@ -372,10 +295,7 @@ public enum Client {
         switch (p.getPayloadType()) {
             case CONNECT:
                 if (!userList.containsKey(p.getClientId())) {
-                    ClientPlayer cp = new ClientPlayer();
-                    cp.setClientName(p.getClientName());
-                    cp.setClientId(p.getClientId());
-                    userList.put(p.getClientId(), cp);
+                    userList.put(p.getClientId(), p.getClientName());
                 }
                 System.out.println(String.format("*%s %s*",
                         p.getClientName(),
@@ -394,10 +314,7 @@ public enum Client {
                 break;
             case SYNC_CLIENT:
                 if (!userList.containsKey(p.getClientId())) {
-                    ClientPlayer cp = new ClientPlayer();
-                    cp.setClientName(p.getClientName());
-                    cp.setClientId(p.getClientId());
-                    userList.put(p.getClientId(), cp);
+                    userList.put(p.getClientId(), p.getClientName());
                 }
             case MESSAGE:
                 System.out.println(String.format("%s: %s",
@@ -407,8 +324,6 @@ public enum Client {
             case CLIENT_ID:
                 if (myClientId == Constants.DEFAULT_CLIENT_ID) {
                     myClientId = p.getClientId();
-                    myPlayer.setClientId(myClientId);
-                    userList.put(myClientId, myPlayer);
                 } else {
                     logger.warning("Receiving client id despite already being set");
                 }
@@ -426,67 +341,6 @@ public enum Client {
                 break;
             case RESET_USER_LIST:
                 userList.clear();
-                break;
-            case READY:
-                System.out.println(String.format("Player %s is ready", getClientNameById(p.getClientId())));
-                break;
-            case PHASE:
-                System.out.println(String.format("The current phase is %s", p.getMessage()));
-                break;
-            case CHARACTER:
-                CharacterPayload cp = (CharacterPayload) p;
-                System.out.println("Created Character");
-                Character character = cp.getCharacter();
-
-                if (userList.containsKey(cp.getClientId())) {
-                    logger.info("Assigning character to " + cp.getClientId());
-                    userList.get(cp.getClientId()).assignCharacter(character);
-                }
-                if (cp.getClientId() == myClientId) {
-                    // myPlayer.assignCharacter(character);
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("Character created: ").append(character.getName()).append("\n");
-                    sb.append("Character level: ").append(character.getLevel()).append("\n");
-                    sb.append("Character type: ").append(character.getType()).append("\n");
-                    sb.append("Character action type: ").append(character.getActionType()).append("\n");
-                    sb.append("Character stats: ").append("\n");
-                    sb.append("Attack: ").append(character.getAttack()).append("\n");
-                    sb.append("Vitality: ").append(character.getVitality()).append("\n");
-                    sb.append("Defense: ").append(character.getDefense()).append("\n");
-                    sb.append("Will: ").append(character.getWill()).append("\n");
-                    sb.append("Luck: ").append(character.getLuck()).append("\n");
-                    sb.append("Progression Rate: ").append(character.getProgressionRate()).append("\n");
-                    sb.append("Range: ").append(character.getRange()).append("\n");
-                    System.out.println(sb.toString());
-                }
-                break;
-            case TURN:
-                System.out.println(String.format("Current Player: %s", getClientNameById(p.getClientId())));
-                break;
-            case GRID:
-                try {
-                    PositionPayload pp = (PositionPayload) p;
-                    clientGrid.buildBasic(pp.getX(), pp.getY());
-                    clientGrid.print();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                break;
-            case CELL:
-                try {
-                    CellPayload cellPayload = (CellPayload) p;
-                    clientGrid.update(cellPayload.getCellData(), userList);
-                    clientGrid.print();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-                break;
-            case GRID_RESET:
-                if(clientGrid != null){
-                    clientGrid.reset();
-                    System.out.println("Grid Reset");
-                    clientGrid.print();
-                }
                 break;
             default:
                 logger.warning(String.format("Unhandled Payload type: %s", p.getPayloadType()));
