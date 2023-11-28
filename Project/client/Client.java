@@ -30,6 +30,7 @@ public enum Client {
     private String clientName = "";
     private long myClientId = Constants.DEFAULT_CLIENT_ID;
     private static Logger logger = Logger.getLogger(Client.class.getName());
+    private String[][] clientBoard;
 
     private Hashtable<Long, String> userList = new Hashtable<Long, String>();
 
@@ -249,6 +250,18 @@ public enum Client {
         inputThread.start();
     }
 
+    private Client() {
+        clientBoard = new String[10][10];
+    }
+
+    private void updateClientBoard(int x, int y, String color) {
+        clientBoard[x][y] = color;
+    }
+
+    private String getCurrentColor(int x, int y) {
+        return clientBoard[x][y];
+    }
+
     private void listenForServerPayload() {
         fromServerThread = new Thread() {
             @Override
@@ -316,6 +329,7 @@ public enum Client {
                 if (!userList.containsKey(p.getClientId())) {
                     userList.put(p.getClientId(), p.getClientName());
                 }
+                break;
             case MESSAGE:
                 System.out.println(String.format("%s: %s",
                         getClientNameById(p.getClientId()),

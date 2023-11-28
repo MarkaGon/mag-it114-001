@@ -1,8 +1,4 @@
 package Project.common;
-import Project.common.Constants;
-import Project.common.Payload;
-import Project.common.PayloadType;
-import Project.common.RoomResultPayload;
 
 /**
  * Created so we don't need to modify the base payload

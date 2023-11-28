@@ -7,9 +7,12 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import Project.common.Board;
 import Project.common.Constants;
+import Project.common.CoordinatePayload;
 import Project.common.Payload;
 import Project.common.PayloadType;
+import Project.common.Phase;
 import Project.common.RoomResultPayload;
 
 /**
@@ -38,12 +41,22 @@ public class ServerThread extends Thread {
         return isRunning;
     }
 
-    public ServerThread(Socket myClient, Room room) {
+    private Board board;
+
+    public ServerThread(Socket myClient, Room room, Board Board) {
         logger.info("ServerThread created");
-        // get communication channels to single client
         this.client = myClient;
         this.currentRoom = room;
+        this.board = board;
 
+    }
+
+    public void updateServerBoard(int x, int y, String color) {
+        board.setColor(x, y, color);
+    }
+
+    public String getCurrentColor(int x, int y) {
+        return board.getColor(x, y);
     }
 
     protected void setClientName(String name) {
@@ -136,12 +149,11 @@ public class ServerThread extends Thread {
         p.setPayloadType(isConnected ? PayloadType.CONNECT : PayloadType.DISCONNECT);
         p.setClientId(clientId);
         p.setClientName(who);
-        // p.setMessage(isConnected ? "connected" : "disconnected");
         p.setMessage(String.format("%s the room %s", (isConnected ? "Joined" : "Left"), currentRoom.getName()));
         return send(p);
     }
 
-    private boolean send(Payload payload) {
+    boolean send(Payload payload) {
         try {
             logger.log(Level.FINE, "Outgoing payload: " + payload);
             out.writeObject(payload);
@@ -176,6 +188,7 @@ public class ServerThread extends Thread {
 
                 logger.info("Received from client: " + fromClient);
                 processPayload(fromClient);
+
             } // close while loop
         } catch (Exception e) {
             // happens when client disconnects
@@ -187,78 +200,6 @@ public class ServerThread extends Thread {
             cleanup();
         }
     }
-    private String  processMessageEffects(String message) {
-        // Scource material: https://stackoverflow.com/questions/36267354/java-string-replaceall-with-back-reference
-        /* UCID: mag DATE: 11/28/23
-        Source of this code in the link: Roughly explains using .replaceall and shows examples
-        I coppied a bit from it but changed the commands 
-        User will type the pattern and then the replaceall method will read that pattern
-        and replace the text with the html tags around it 
-        The color part is the same idea but will type out the color 
-        bold, italics, underline*/
-         message = message.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>")
-                     .replaceAll("\\*(.*?)\\*", "<i>$1</i>")
-                     .replaceAll("_(.*?)_", "<u>$1</u>");
-        //  color
-        message = message.replaceAll("\\[red\\](.*?)\\[/red\\]", "<font color='red'>$1</font>");
-        message = message.replaceAll("\\[green\\](.*?)\\[/green\\]", "<font color='green'>$1</font>");
-        message = message.replaceAll("\\[blue\\](.*?)\\[/blue\\]", "<font color='blue'>$1</font>");
-    
-        return message;
-    }
-/*UCID:mag DATE:11/28/23
- If less than 0.5, result becomes heads
- if greater, result becomes tails
- then send a message to everyone in the room
- with teh result
- */
-    private void flipCoin() {
-        String result = (Math.random() < 0.5) ? "Heads" : "Tails";
-        currentRoom.sendMessage(this, "" + result);
-    } 
-
-/*UCID:mag DATE:11/28/23
- I used the same roll command from 
- our previous assignemnt.
- Use .split to see the fromat for rolling the dice
- .length allows us to take two different parts of the comman
- says how many dice we will roll and how many faces
- d must be in between both numbers
-parseint will parse the string holding info of the dice
-both value must be greater than 0
-Math for rolling dice and some exceptition handling 
- */
-    private void rollDice(String message) {
-        String[] side = message.split(" ");
-        if (side.length != 2) {
-            currentRoom.sendMessage(this, "try again:");
-            return;
-        }
-
-        String[] rolling = side[1].split("d");
-        if (rolling.length != 2) {
-            currentRoom.sendMessage(this, "try again");
-            return;
-        }
-        try {
-            int dice = Integer.parseInt(rolling[0]);
-            int faces = Integer.parseInt(rolling[1]);
-            if (dice <= 0 || faces <= 0) {
-                currentRoom.sendMessage(this, "try again");
-                return;
-            }
-    
-            StringBuilder rollResult = new StringBuilder("rolled: ");
-            for (int i = 0; i < dice; i++) {
-                int roll = (int) (Math.random() * faces) + 1;
-                rollResult.append(roll).append(" ");
-            }
-            currentRoom.sendMessage(this, rollResult.toString());
-        } catch (NumberFormatException e) {
-            currentRoom.sendMessage(this, "try again");
-        }
-    }
-
 
     void processPayload(Payload p) {
         switch (p.getPayloadType()) {
@@ -268,25 +209,23 @@ Math for rolling dice and some exceptition handling
             case DISCONNECT:
                 Room.disconnectClient(this, getCurrentRoom());
                 break;
-                /*UCID:mag Date:11/28/23
-                 Chcekc if client uses /flip or /roll 
-                 then process it accordingly based on the command
-                 use trim to removes spaces in commands 
-                 */
-                case MESSAGE:
+            case MESSAGE:
                 if (currentRoom != null) {
-                    String message = p.getMessage().trim();
-                    if (message.startsWith("/roll")) {
-                        rollDice(message);
-                    } else if (message.equals("/flip")) {
-                        flipCoin();
-                    } else {
-                        String processedMessage = processMessageEffects(message);
-                        currentRoom.sendMessage(this, processedMessage);
-                    }
+                    currentRoom.sendMessage(this, p.getMessage());
                 } else {
+                    // TODO migrate to lobby
                     logger.log(Level.INFO, "Migrating to lobby on message with null room");
                     Room.joinRoom(Constants.LOBBY, this);
+                }
+            
+                case COORDINATES:
+                if (p instanceof CoordinatePayload) {
+                    CoordinatePayload coordPayload = (CoordinatePayload) p;
+                    if (coordPayload.getColor().equals(getCurrentColor(coordPayload.getX(), coordPayload.getY()))) {
+                        return;
+                    }
+                    updateServerBoard(coordPayload.getX(), coordPayload.getY(), coordPayload.getColor());
+                    broadcastCoordinateUpdate(p);
                 }
                 break;
             case GET_ROOMS:
@@ -308,6 +247,25 @@ Math for rolling dice and some exceptition handling
 
     }
 
+    private void broadcastCoordinateUpdate(Payload p) {
+        if (p instanceof CoordinatePayload) {
+            CoordinatePayload coordPayload = (CoordinatePayload) p;
+            int x = coordPayload.getX();
+            int y = coordPayload.getY();
+            String color = coordPayload.getColor();
+    
+        
+            if (!color.equals(getCurrentColor(x, y))) {
+                
+                updateServerBoard(x, y, color);
+                Room currentRoom = getCurrentRoom();
+                if (currentRoom != null) {
+                    currentRoom.broadcastUpdate(p, this);
+                }
+            }
+        }
+    }
+
     private void cleanup() {
         logger.info("Thread cleanup() start");
         try {
@@ -316,5 +274,13 @@ Math for rolling dice and some exceptition handling
             logger.info("Client already closed");
         }
         logger.info("Thread cleanup() complete");
+    }
+
+    public boolean sendPhaseSync(Phase currentPhase) {
+        return false;
+    }
+
+    public boolean sendClearBoard() {
+        return false;
     }
 }
