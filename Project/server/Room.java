@@ -1,6 +1,7 @@
 package Project.server;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -25,6 +26,7 @@ public class Room implements AutoCloseable {
         this.name = name;
         isRunning = true;
     }
+
 
     public String getName() {
         return name;
@@ -87,7 +89,7 @@ public class Room implements AutoCloseable {
      * Checks the number of clients.
      * If zero, begins the cleanup process to dispose of the room
      */
-    private void checkClients() {
+    public void checkClients() {
         // Cleanup if room is empty and not lobby
         if (!name.equalsIgnoreCase(Constants.LOBBY) && (clients == null || clients.size() == 0)) {
             close();

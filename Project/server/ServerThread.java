@@ -176,7 +176,6 @@ public class ServerThread extends Thread {
 
                 logger.info("Received from client: " + fromClient);
                 processPayload(fromClient);
-
             } // close while loop
         } catch (Exception e) {
             // happens when client disconnects
@@ -189,6 +188,44 @@ public class ServerThread extends Thread {
         }
     }
 
+    private void flipCoin() {
+        String result = (Math.random() < 0.5) ? "Heads" : "Tails";
+        currentRoom.sendMessage(this, "" + result);
+    } 
+
+    private void rollDice(String message) {
+        String[] side = message.split(" ");
+        if (side.length != 2) {
+            currentRoom.sendMessage(this, "try again:");
+            return;
+        }
+    
+        String[] rollParams = side[1].split("d");
+        if (rollParams.length != 2) {
+            currentRoom.sendMessage(this, "try again");
+            return;
+        }
+    
+        try {
+            int dice = Integer.parseInt(rollParams[0]);
+            int faces = Integer.parseInt(rollParams[1]);
+            if (dice <= 0 || faces <= 0) {
+                currentRoom.sendMessage(this, "try again");
+                return;
+            }
+    
+            StringBuilder rollResult = new StringBuilder("rolled: ");
+            for (int i = 0; i < dice; i++) {
+                int roll = (int) (Math.random() * faces) + 1;
+                rollResult.append(roll).append(" ");
+            }
+            currentRoom.sendMessage(this, rollResult.toString());
+        } catch (NumberFormatException e) {
+            currentRoom.sendMessage(this, "try again");
+        }
+    }
+
+
     void processPayload(Payload p) {
         switch (p.getPayloadType()) {
             case CONNECT:
@@ -199,9 +236,15 @@ public class ServerThread extends Thread {
                 break;
             case MESSAGE:
                 if (currentRoom != null) {
-                    currentRoom.sendMessage(this, p.getMessage());
+                     String message = p.getMessage().trim();
+                    if (message.startsWith("/roll")) {
+                        rollDice(message);
+                    } else if (message.equals("/flip")) {
+                        flipCoin();
+                    } else {
+                        currentRoom.sendMessage(this, p.getMessage());
+                    }
                 } else {
-                    // TODO migrate to lobby
                     logger.log(Level.INFO, "Migrating to lobby on message with null room");
                     Room.joinRoom(Constants.LOBBY, this);
                 }
