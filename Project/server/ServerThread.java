@@ -187,6 +187,19 @@ public class ServerThread extends Thread {
             cleanup();
         }
     }
+    private String  processMessageEffects(String message) {
+        // Scource material: https://stackoverflow.com/questions/36267354/java-string-replaceall-with-back-reference
+        //  bold, italics, underline
+         message = message.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>")
+                     .replaceAll("\\*(.*?)\\*", "<i>$1</i>")
+                     .replaceAll("__(.*?)__", "<u>$1</u>");
+        //  color
+        message = message.replaceAll("\\[red\\](.*?)\\[/red\\]", "<font color='red'>$1</font>");
+        message = message.replaceAll("\\[green\\](.*?)\\[/green\\]", "<font color='green'>$1</font>");
+        message = message.replaceAll("\\[blue\\](.*?)\\[/blue\\]", "<font color='blue'>$1</font>");
+    
+        return message;
+    }
 
     private void flipCoin() {
         String result = (Math.random() < 0.5) ? "Heads" : "Tails";
@@ -234,15 +247,16 @@ public class ServerThread extends Thread {
             case DISCONNECT:
                 Room.disconnectClient(this, getCurrentRoom());
                 break;
-            case MESSAGE:
+                case MESSAGE:
                 if (currentRoom != null) {
-                     String message = p.getMessage().trim();
+                    String message = p.getMessage().trim();
                     if (message.startsWith("/roll")) {
                         rollDice(message);
                     } else if (message.equals("/flip")) {
                         flipCoin();
                     } else {
-                        currentRoom.sendMessage(this, p.getMessage());
+                        String processedMessage = processMessageEffects(message);
+                        currentRoom.sendMessage(this, processedMessage);
                     }
                 } else {
                     logger.log(Level.INFO, "Migrating to lobby on message with null room");
