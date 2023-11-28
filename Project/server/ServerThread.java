@@ -189,10 +189,16 @@ public class ServerThread extends Thread {
     }
     private String  processMessageEffects(String message) {
         // Scource material: https://stackoverflow.com/questions/36267354/java-string-replaceall-with-back-reference
-        //  bold, italics, underline
+        /* UCID: mag DATE: 11/28/23
+        Source of this code in the link: Roughly explains using .replaceall and shows examples
+        I coppied a bit from it but changed the commands 
+        User will type the pattern and then the replaceall method will read that pattern
+        and replace the text with the html tags around it 
+        The color part is the same idea but will type out the color 
+        bold, italics, underline*/
          message = message.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>")
                      .replaceAll("\\*(.*?)\\*", "<i>$1</i>")
-                     .replaceAll("__(.*?)__", "<u>$1</u>");
+                     .replaceAll("_(.*?)_", "<u>$1</u>");
         //  color
         message = message.replaceAll("\\[red\\](.*?)\\[/red\\]", "<font color='red'>$1</font>");
         message = message.replaceAll("\\[green\\](.*?)\\[/green\\]", "<font color='green'>$1</font>");
@@ -200,28 +206,43 @@ public class ServerThread extends Thread {
     
         return message;
     }
-
+/*UCID:mag DATE:11/28/23
+ If less than 0.5, result becomes heads
+ if greater, result becomes tails
+ then send a message to everyone in the room
+ with teh result
+ */
     private void flipCoin() {
         String result = (Math.random() < 0.5) ? "Heads" : "Tails";
         currentRoom.sendMessage(this, "" + result);
     } 
 
+/*UCID:mag DATE:11/28/23
+ I used the same roll command from 
+ our previous assignemnt.
+ Use .split to see the fromat for rolling the dice
+ .length allows us to take two different parts of the comman
+ says how many dice we will roll and how many faces
+ d must be in between both numbers
+parseint will parse the string holding info of the dice
+both value must be greater than 0
+Math for rolling dice and some exceptition handling 
+ */
     private void rollDice(String message) {
         String[] side = message.split(" ");
         if (side.length != 2) {
             currentRoom.sendMessage(this, "try again:");
             return;
         }
-    
-        String[] rollParams = side[1].split("d");
-        if (rollParams.length != 2) {
+
+        String[] rolling = side[1].split("d");
+        if (rolling.length != 2) {
             currentRoom.sendMessage(this, "try again");
             return;
         }
-    
         try {
-            int dice = Integer.parseInt(rollParams[0]);
-            int faces = Integer.parseInt(rollParams[1]);
+            int dice = Integer.parseInt(rolling[0]);
+            int faces = Integer.parseInt(rolling[1]);
             if (dice <= 0 || faces <= 0) {
                 currentRoom.sendMessage(this, "try again");
                 return;
@@ -247,6 +268,11 @@ public class ServerThread extends Thread {
             case DISCONNECT:
                 Room.disconnectClient(this, getCurrentRoom());
                 break;
+                /*UCID:mag Date:11/28/23
+                 Chcekc if client uses /flip or /roll 
+                 then process it accordingly based on the command
+                 use trim to removes spaces in commands 
+                 */
                 case MESSAGE:
                 if (currentRoom != null) {
                     String message = p.getMessage().trim();

@@ -4,13 +4,20 @@ import java.io.Serializable;
 
 public class Payload implements Serializable {
     private static final long serialVersionUID = 2L;
+/* UCID: mag  DATE: 11/28/23
+change the serialVersionUID changed becasue 
+class structure changed, make sure that the nothing
+will be deserialized and keeps compatibilty.
+*/
 
-    private PayloadType payloadType;
-    private String clientName;
-    private long clientId;
 
-    private String message;
-    private String sender; // New field to hold sender's username
+    private PayloadType payloadType; //holds commands
+    private String clientName; //name of client
+    private long clientId;// help manage lcients
+
+    private String message;// data sent to clients
+    private String sender;/* username of sender, Now in
+                            toString showing this info*/
 
     public Payload() {
     }
@@ -55,8 +62,10 @@ public class Payload implements Serializable {
     public void setSender(String sender) {
         this.sender = sender;
     }
-
-    @Override
+/*UCID: mag DATE: 11/28/23 
+ added Sender to the toString so it will displays
+ on the server side of our application */
+    @Override 
     public String toString() {
         return String.format("Type[%s], Sender[%s], ClientId[%s], ClientName[%s], Message[%s]",
                 getPayloadType().toString(), getSender(), getClientId(), getClientName(), getMessage());
