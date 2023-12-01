@@ -1,7 +1,6 @@
 package Project.server;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
@@ -9,9 +8,10 @@ import java.util.logging.Logger;
 import Project.common.Constants;
 
 public class Room implements AutoCloseable {
-    protected static Server server;// used to refer to accessible server functions
+    // protected static Server server;// used to refer to accessible server
+    // functions
     private String name;
-    private List<ServerThread> clients = new ArrayList<ServerThread>();
+    protected List<ServerThread> clients = new ArrayList<ServerThread>();
     private boolean isRunning = false;
     // Commands
     private final static String COMMAND_TRIGGER = "/";
@@ -21,12 +21,12 @@ public class Room implements AutoCloseable {
     private final static String LOGOUT = "logout";
     private final static String LOGOFF = "logoff";
     private static Logger logger = Logger.getLogger(Room.class.getName());
+    public static Server server;
 
     public Room(String name) {
         this.name = name;
         isRunning = true;
     }
-
 
     public String getName() {
         return name;
@@ -89,7 +89,7 @@ public class Room implements AutoCloseable {
      * Checks the number of clients.
      * If zero, begins the cleanup process to dispose of the room
      */
-    public void checkClients() {
+    private void checkClients() {
         // Cleanup if room is empty and not lobby
         if (!name.equalsIgnoreCase(Constants.LOBBY) && (clients == null || clients.size() == 0)) {
             close();
@@ -148,7 +148,7 @@ public class Room implements AutoCloseable {
     }
 
     protected static void createRoom(String roomName, ServerThread client) {
-        if (server.createNewRoom(roomName)) {
+        if (Server.INSTANCE.createNewRoom(roomName)) {
             Room.joinRoom(roomName, client);
         } else {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, String.format("Room %s already exists", roomName));
@@ -163,7 +163,7 @@ public class Room implements AutoCloseable {
      * @param client
      */
     protected static void joinRoom(String roomName, ServerThread client) {
-        if (!server.joinRoom(roomName, client)) {
+        if (!Server.INSTANCE.joinRoom(roomName, client)) {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, String.format("Room %s doesn't exist", roomName));
         }
     }
@@ -216,7 +216,7 @@ public class Room implements AutoCloseable {
         }
     }
 
-    private void handleDisconnect(Iterator<ServerThread> iter, ServerThread client) {
+    protected void handleDisconnect(Iterator<ServerThread> iter, ServerThread client) {
         iter.remove();
         logger.info(String.format("Removed client %s", client.getClientName()));
         sendMessage(null, client.getClientName() + " disconnected");
@@ -224,7 +224,7 @@ public class Room implements AutoCloseable {
     }
 
     public void close() {
-        server.removeRoom(this);
+        Server.INSTANCE.removeRoom(this);
         isRunning = false;
         clients.clear();
     }
