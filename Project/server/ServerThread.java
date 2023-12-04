@@ -217,7 +217,7 @@ public class ServerThread extends Thread {
  */
     private void flipCoin() {
         String result = (Math.random() < 0.5) ? "Heads" : "Tails";
-        currentRoom.sendMessage(this, "Flipped a coin and got: " + result);
+        currentRoom.sendMessage(this, "Flipped a coin and got:" + result);
     } 
 
 /*UCID:mag DATE:11/28/23
@@ -251,7 +251,7 @@ Math for rolling dice and some exceptition handling
                 return;
             }
     
-            StringBuilder rollResult = new StringBuilder("Rolled a dice and got: ");
+            StringBuilder rollResult = new StringBuilder("Rolled a dice and go: ");
             for (int i = 0; i < dice; i++) {
                 int roll = (int) (Math.random() * faces) + 1;
                 rollResult.append(roll).append(" ");
