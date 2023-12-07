@@ -22,6 +22,8 @@ public class Room implements AutoCloseable {
 	private final static String DISCONNECT = "disconnect";
 	private final static String LOGOUT = "logout";
 	private final static String LOGOFF = "logoff";
+    private final static String MUTE = "mute";
+	private final static String UNMUTE = "unmute";
 	
     private static Logger logger = Logger.getLogger(Room.class.getName());
     public static Server server;
@@ -110,6 +112,8 @@ public class Room implements AutoCloseable {
                 // change
     private boolean processCommands(String message, ServerThread client) {
         boolean wasCommand = false;
+        List<String> mutedClients = new ArrayList<String>();
+		List<String> dm = new ArrayList<String>();
         try {
             if (message.startsWith(COMMAND_TRIGGER)) {
                 String[] comm = message.split(COMMAND_TRIGGER);
@@ -139,16 +143,97 @@ public class Room implements AutoCloseable {
                         String rollCommand = comm2[1];
 						roll(client, rollCommand);
 						break;
-                    default:
-                        wasCommand = false;
-                        break;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return wasCommand;
-    }
+                    case MUTE:
+						String s = message;
+						if (s.indexOf("@") > -1) {
+							String[] ats = s.split("@");
+							for (int i = 0; i < ats.length; i++) {
+								if (i % 2 != 0) {
+									String[] data = ats[i].split(" ");
+									String user = data[0].toLowerCase();
+									mutedClients.add(user);
+								}
+							}
+							sendPrivateMessage(client, mutedClients, client.getClientName() + " muted you");
+						}
+						break;
+						//UCID 31485020 
+						// Jul 28, 2022
+						// attempt to create an unmute function where users are taken off of a string list
+					case UNMUTE:
+						String ss = message;
+						if (ss.indexOf("@") > -1) {
+							String[] ats = ss.split("@");
+							List<String> unblock = new ArrayList<String>();
+							for (int i = 0; i < ats.length; i++) {
+								if (i % 2 != 0) {
+									String[] data = ats[i].split(" ");
+									String user = data[0].toLowerCase();
+									mutedClients.remove(user);
+									unblock.add(user);
+								}
+							}
+							sendPrivateMessage(client, unblock, client.getClientName() + " unmuted you");
+						}
+					case "PM":
+						String y = message;
+						
+						if(y.indexOf("@")>-1)
+						{
+							List<String> g = new ArrayList<String>();
+							String[] t = y.split("@");
+							
+							for(int i=0;i<t.length;i++){
+								if(i%2!=0)
+								{
+									String[]d=t[i].split(" ");
+									String u = d[0];
+									g.add(u);
+								}
+							}
+							sendPrivateMessage(client, g, message);
+						}
+						
+
+						break;
+
+					default:
+
+						wasCommand = false;
+						break;
+				}
+
+			}
+			if (!message.startsWith(COMMAND_TRIGGER)) {
+				String m = message;
+				List<String> clientss = new ArrayList<String>();
+
+				if (m.indexOf("@") > -1) {
+					String arr[] = m.split("@");
+					String clientName = "";
+					for (int i = 0; i < arr.length; i++) {
+						if (i > 0) {
+							clientName = clientName.trim().toLowerCase();
+							clientss.add(clientName);
+						}
+					}
+					sendPrivateMessage(client, clientss, message);
+					
+					
+				}
+
+				return false;
+			}
+		}
+
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return wasCommand;
+		// return response;
+
+	}
 
     // Command helper methods
     // Command helper methods
@@ -353,9 +438,28 @@ public class Room implements AutoCloseable {
     }
 }
 
-     
-      
-      
+protected void sendPrivateMessage(ServerThread sender, List<String> dest, String message) {
+    long from = (sender == null) ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
+
+    for (ServerThread client : clients) {
+        if (dest.contains(client.getClientName().toLowerCase())) {
+            boolean messageSent = client.sendMessage(from, message);
+            if (!messageSent) {
+                // Handle message delivery failure if needed
+            }
+        }
+    }
+
+    // Also send the message to the sender (writer) if not already included
+    if (!dest.contains(sender.getClientName().toLowerCase())) {
+        boolean senderMessageSent = sender.sendMessage(from, message);
+        if (!senderMessageSent) {
+            // Handle sender message delivery failure if needed
+        }
+    }
+}
+
+ 
 
     public void close() {
         Server.INSTANCE.removeRoom(this);
