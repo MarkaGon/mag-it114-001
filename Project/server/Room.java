@@ -136,8 +136,7 @@ public class Room implements AutoCloseable {
 						flip(client);
 						break;
 					case ROLL:
-						int n = Integer.valueOf(comm2[1]);
-						roll(client, Integer.toString(n));
+						roll(client, message);
 						break;
                     default:
                         wasCommand = false;
@@ -285,64 +284,44 @@ public class Room implements AutoCloseable {
         sendMessage(null, client.getClientName() + " disconnected");
         checkClients();
     }
-
+    
     protected synchronized void flip(ServerThread sender) {
-		Random random = new Random();
-		int coin = random.nextInt(4);
-		String message;
-		if (coin % 2 == 0) {
-			message = "-r The Coin is Heads r-";
-
-		} else {
-			message = "-r The Coin is tails r-";
-
-		}
-
-		sendMessage(sender, message);
-
-		// return message;
-
-	}
-	
-	protected synchronized void roll(ServerThread sender, String rollCommand) {
         Random random = new Random();
-    
-        // Format 1: /roll 0 - X or 1 - X
-        if (rollCommand.matches("/roll\\s+(0|1)\\s*-\\s*(\\d+)")) {
-            String[] parts = rollCommand.split("\\s*-\\s*");
-            int startValue = Integer.parseInt(parts[0].split("\\s+")[1]);
-            int maxValue = Integer.parseInt(parts[1]);
-    
-            int num = random.nextInt(maxValue - startValue + 1) + startValue;
-            String message = "-r Your Number is " + num + " r-";
-            String newr = formatMessage(message);
-    
-            sendMessage(sender, newr);
-        }
-    
-        // Format 2: /roll #d#
-        else if (rollCommand.matches("/roll\\s*(\\d+)d(\\d+)")) {
-            String[] parts = rollCommand.split("d");
-            int numDice = Integer.parseInt(parts[0].split("\\s+")[1]);
-            int numSides = Integer.parseInt(parts[1]);
-    
-            int total = 0;
-            for (int i = 0; i < numDice; i++) {
-                total += random.nextInt(numSides) + 1;
-            }
-    
-            String message = "-r Your Total is " + total + " r-";
-            String newr = formatMessage(message);
-    
-            sendMessage(sender, newr);
-        }
-    
-        // Invalid roll command
-        else {
-            sendMessage(sender, "-r Invalid roll command. Please use /roll 0 - X or 1 - X, or /roll #d# r-");
-        }
+        boolean isHeads = random.nextBoolean();
+        
+        String message = isHeads ? "-r The Coin is Heads r-" : "-r The Coin is Tails r-";
+        
+        sendMessage(sender, message);
     }
-    
+
+	protected synchronized void roll(ServerThread sender, String command) {
+        String[] parts = command.split(" ");
+        String format = parts[1];
+        int result;
+     
+        if (format.contains("-")) {
+            // Format 1: /roll 0 - X or 1 - X
+            String[] range = format.split("-");
+            int start = Integer.parseInt(range[0]);
+            int end = Integer.parseInt(range[1]);
+            Random random = new Random();
+            result = random.nextInt(end - start + 1) + start;
+        } else {
+            // Format 2: /roll #d#
+            String[] dice = format.split("d");
+            int numberOfDice = Integer.parseInt(dice[0]);
+            int sides = Integer.parseInt(dice[1]);
+            Random random = new Random();
+            result = 0;
+            for (int i = 0; i < numberOfDice; i++) {
+                result += random.nextInt(sides) + 1;
+            }
+        }
+     
+        String message = "-r Your Number is " + result + " r-";
+        String newr = formatMessage(message);
+        sendMessage(sender, newr);
+     }
 
     public void close() {
         Server.INSTANCE.removeRoom(this);
