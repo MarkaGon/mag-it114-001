@@ -32,8 +32,7 @@ public class ChatPanel extends JPanel {
     private static Logger logger = Logger.getLogger(ChatPanel.class.getName());
     private JPanel chatArea = null;
     private UserListPanel userListPanel;
-
-    public ChatPanel(ICardControls controls) {
+    public ChatPanel(ICardControls controls){
         super(new BorderLayout(10, 10));
         JPanel wrapper = new JPanel();
         wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.Y_AXIS));
@@ -105,7 +104,6 @@ public class ChatPanel extends JPanel {
 
             @Override
             public void componentAdded(ContainerEvent e) {
-
                 if (chatArea.isVisible()) {
                     chatArea.revalidate();
                     chatArea.repaint();
@@ -129,8 +127,8 @@ public class ChatPanel extends JPanel {
                 // set the dimensions based on the frame size
                 Dimension frameSize = wrapper.getParent().getParent().getSize();
                 int w = (int) Math.ceil(frameSize.getWidth() * .3f);
-
-                userListPanel.setPreferredSize(new Dimension(w, (int) frameSize.getHeight()));
+                
+                userListPanel.setPreferredSize(new Dimension(w, (int)frameSize.getHeight()));
                 userListPanel.revalidate();
                 userListPanel.repaint();
             }
@@ -141,29 +139,25 @@ public class ChatPanel extends JPanel {
             }
         });
     }
-
-    public void addUserListItem(long clientId, String clientName) {
+    public void addUserListItem(long clientId, String clientName){
         userListPanel.addUserListItem(clientId, clientName);
     }
-
-    public void removeUserListItem(long clientId) {
+    public void removeUserListItem(long clientId){
         userListPanel.removeUserListItem(clientId);
     }
-
-    public void clearUserList() {
+    public void clearUserList(){
         userListPanel.clearUserList();
     }
-
     public void addText(String text) {
         JPanel content = chatArea;
         // add message
-        JEditorPane textContainer = new JEditorPane("text/plain", text);
+        JEditorPane textContainer = new JEditorPane("text/html", text);
 
         // sizes the panel to attempt to take up the width of the container
         // and expand in height based on word wrapping
         textContainer.setLayout(null);
         textContainer.setPreferredSize(
-                new Dimension(content.getWidth(), ClientUtils.calcHeightForText(this, text, content.getWidth())));
+                new Dimension(content.getWidth(), ClientUtils.calcHeightForText(this,text, content.getWidth())));
         textContainer.setMaximumSize(textContainer.getPreferredSize());
         textContainer.setEditable(false);
         ClientUtils.clearBackground(textContainer);

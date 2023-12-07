@@ -3,8 +3,8 @@ package Project.server;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
-
 import Project.common.Constants;
 
 public class Room implements AutoCloseable {
@@ -15,11 +15,14 @@ public class Room implements AutoCloseable {
     private boolean isRunning = false;
     // Commands
     private final static String COMMAND_TRIGGER = "/";
-    private final static String CREATE_ROOM = "createroom";
-    private final static String JOIN_ROOM = "joinroom";
-    private final static String DISCONNECT = "disconnect";
-    private final static String LOGOUT = "logout";
-    private final static String LOGOFF = "logoff";
+    private final static String FLIP = "flip";
+	private final static String ROLL = "roll";
+	private final static String CREATE_ROOM = "createroom";
+	private final static String JOIN_ROOM = "joinroom";
+	private final static String DISCONNECT = "disconnect";
+	private final static String LOGOUT = "logout";
+	private final static String LOGOFF = "logoff";
+	
     private static Logger logger = Logger.getLogger(Room.class.getName());
     public static Server server;
 
@@ -128,7 +131,14 @@ public class Room implements AutoCloseable {
                     case LOGOUT:
                     case LOGOFF:
                         Room.disconnectClient(client, this);
-                        break;
+                    break;
+                        case FLIP:
+						flip(client);
+						break;
+					case ROLL:
+						int n = Integer.valueOf(comm2[1]);
+						roll(client, Integer.toString(n));
+						break;
                     default:
                         wasCommand = false;
                         break;
@@ -141,6 +151,59 @@ public class Room implements AutoCloseable {
     }
 
     // Command helper methods
+    // Command helper methods
+	protected String change(boolean change, String msg, String delimiter, String tag, String end) {
+		String[] splitmsg = msg.split(delimiter);
+		String temp = "";
+		for (int i = 0; i < splitmsg.length; i++) {
+			if (i % 2 == 0) {temp += splitmsg[i];
+			} else {
+				temp += tag + splitmsg[i] + end;
+			}
+		}
+
+		return temp;
+	}
+
+	protected String formatMessage(String message) {
+		String newMSG = message;
+
+		newMSG = change(newMSG.indexOf("##") > -1, newMSG, "##", "<b>", "</b>");
+		newMSG = change(newMSG.indexOf("**") > -1, newMSG, "\\*\\*", "<u>", "</u>");
+		newMSG = change(newMSG.indexOf("$$") > -1, newMSG, "\\$\\$", "<i>", "</i>");
+		// color for red
+		if (newMSG.indexOf("-r") > -1) {
+			String[] s1 = newMSG.split("\\-");
+			String m = "";
+
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith("r") || s1[i].endsWith("r")) {
+					m += "<font color=\"red\">" + s1[i].substring(2, s1[i].length() - 2) + "</font>";
+				} else {
+					m += s1[i];
+
+				}
+				System.out.println(s1[i]);
+			}
+
+			newMSG = m;
+
+		}
+		if (newMSG.indexOf("-y") > -1) {
+			String[] s1 = newMSG.split("\\-");
+			String m = "";
+
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith("y") || s1[i].endsWith("y")) {
+					m += "<font color=\"yellow\">" + s1[i].substring(2, s1[i].length() - 2) + "</font>";
+				} else {m += s1[i];				}
+				System.out.println(s1[i]);
+			}
+			newMSG = m;
+		}
+		return newMSG;
+	}
+
     protected static void getRooms(String query, ServerThread client) {
         String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
         client.sendRoomsList(rooms,
@@ -222,6 +285,64 @@ public class Room implements AutoCloseable {
         sendMessage(null, client.getClientName() + " disconnected");
         checkClients();
     }
+
+    protected synchronized void flip(ServerThread sender) {
+		Random random = new Random();
+		int coin = random.nextInt(4);
+		String message;
+		if (coin % 2 == 0) {
+			message = "-r The Coin is Heads r-";
+
+		} else {
+			message = "-r The Coin is tails r-";
+
+		}
+
+		sendMessage(sender, message);
+
+		// return message;
+
+	}
+	
+	protected synchronized void roll(ServerThread sender, String rollCommand) {
+        Random random = new Random();
+    
+        // Format 1: /roll 0 - X or 1 - X
+        if (rollCommand.matches("/roll\\s+(0|1)\\s*-\\s*(\\d+)")) {
+            String[] parts = rollCommand.split("\\s*-\\s*");
+            int startValue = Integer.parseInt(parts[0].split("\\s+")[1]);
+            int maxValue = Integer.parseInt(parts[1]);
+    
+            int num = random.nextInt(maxValue - startValue + 1) + startValue;
+            String message = "-r Your Number is " + num + " r-";
+            String newr = formatMessage(message);
+    
+            sendMessage(sender, newr);
+        }
+    
+        // Format 2: /roll #d#
+        else if (rollCommand.matches("/roll\\s*(\\d+)d(\\d+)")) {
+            String[] parts = rollCommand.split("d");
+            int numDice = Integer.parseInt(parts[0].split("\\s+")[1]);
+            int numSides = Integer.parseInt(parts[1]);
+    
+            int total = 0;
+            for (int i = 0; i < numDice; i++) {
+                total += random.nextInt(numSides) + 1;
+            }
+    
+            String message = "-r Your Total is " + total + " r-";
+            String newr = formatMessage(message);
+    
+            sendMessage(sender, newr);
+        }
+    
+        // Invalid roll command
+        else {
+            sendMessage(sender, "-r Invalid roll command. Please use /roll 0 - X or 1 - X, or /roll #d# r-");
+        }
+    }
+    
 
     public void close() {
         Server.INSTANCE.removeRoom(this);
