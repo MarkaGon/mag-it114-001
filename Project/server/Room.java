@@ -377,66 +377,67 @@ public class Room implements AutoCloseable {
       
 
       protected synchronized void roll(ServerThread sender, String rollCommand) {
-    // Check for format 1: /roll 0 - X or 1 - X
-    if (rollCommand.matches("^\\d+(\\s-\\s\\d+)?$")) {
-        // Extract min and max values
-        String[] parts = rollCommand.split(" - ");
-        int min;
-        int max;
-        if (parts.length == 1) {
-            min = 1;
-            max = Integer.parseInt(parts[0]);
-        } else {
-            min = Integer.parseInt(parts[0]);
-            max = Integer.parseInt(parts[1]);
-        }
-
-        if (min > max) {
-            sendMessage(sender, "-r Invalid roll command. The minimum value must be less than or equal to the maximum value. r-");
-            return;
-        }
-
-        // Generate a random number within the range
-        int result = new Random().nextInt(max - min + 1) + min;
-
-        // Format and send the result message
-        String resultMessage = "[red] You rolled " + result + "[/red]";
-        sendMessage(sender, processTextFormatting(resultMessage));
-    }
-    // Check for format 2: /roll #d#
-    else if (rollCommand.matches("^\\d+d\\d+$")) {
-        // Extract number of dice and sides
-        String[] parts = rollCommand.split("d");
-        int numDice = Integer.parseInt(parts[0]);
-        int sides = Integer.parseInt(parts[1]);
-
-        if (numDice <= 0 || sides <= 0) {
-            sendMessage(sender, "[red] Invalid dice parameters. Please enter valid values for the dice roll. [/red]");
-            return;
-        }
-
-        // Roll the dice and generate results
-        List<Integer> results = new ArrayList<>();
-        for (int i = 0; i < numDice; i++) {
-            results.add(new Random().nextInt(sides) + 1);
-        }
-
-        // Format the results message
-        String resultMessage = "[red] You rolled ";
-        for (int i = 0; i < results.size(); i++) {
-            resultMessage += results.get(i);
-            if (i < results.size() - 1) {
-                resultMessage += ", ";
+        // Check for format 1: /roll 0 - X or 1 - X
+        if (rollCommand.matches("^\\d+(\\s-\\s\\d+)?$")) {
+            // Extract min and max values
+            String[] parts = rollCommand.split(" - ");
+            int min;
+            int max;
+            if (parts.length == 1) {
+                min = 1;
+                max = Integer.parseInt(parts[0]);
+            } else {
+                min = Integer.parseInt(parts[0]);
+                max = Integer.parseInt(parts[1]);
             }
+     
+            if (min > max) {
+                sendMessage(sender, "[red] Invalid roll command. The minimum value must be less than or equal to the maximum value. [/red]");
+                return;
+            }
+     
+            // Generate a random number within the range
+            int result = new Random().nextInt(max - min + 1) + min;
+     
+            // Format and send the result message
+            String resultMessage = "[red] You rolled " + result + " out of " + (max - min + 1) + "[/red]";
+            sendMessage(sender, processTextFormatting(resultMessage));
         }
-        resultMessage += "[/red]";
-
-        sendMessage(sender, processTextFormatting(resultMessage));
-    } else {
-        // Invalid format, send error message
-        sendMessage(sender, "[red] Invalid roll command. Please use the correct format. [/red]");
-    }
-}
+        // Check for format 2: /roll #d#
+        else if (rollCommand.matches("^\\d+d\\d+$")) {
+            // Extract number of dice and sides
+            String[] parts = rollCommand.split("d");
+            int numDice = Integer.parseInt(parts[0]);
+            int sides = Integer.parseInt(parts[1]);
+     
+            if (numDice <= 0 || sides <= 0) {
+                sendMessage(sender, "[red] Invalid dice parameters. Please enter valid values for the dice roll. [/red]");
+                return;
+            }
+     
+            // Roll the dice and generate results
+            List<Integer> results = new ArrayList<>();
+            for (int i = 0; i < numDice; i++) {
+                results.add(new Random().nextInt(sides) + 1);
+            }
+     
+            // Format the results message
+            String resultMessage = "[red] You rolled ";
+            for (int i = 0; i < results.size(); i++) {
+                resultMessage += results.get(i);
+                if (i < results.size() - 1) {
+                    resultMessage += ", ";
+                }
+            }
+            resultMessage += " from " + numDice + "d" + sides + "[/red]";
+     
+            sendMessage(sender, processTextFormatting(resultMessage));
+        } else {
+            // Invalid format, send error message
+            sendMessage(sender, "[red] Invalid roll command. Please use the correct format. [/red]");
+        }
+     }
+     
 
 protected void sendPrivateMessage(ServerThread sender, List<String> dest, String message) {
     long from = (sender == null) ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
