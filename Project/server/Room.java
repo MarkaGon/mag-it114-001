@@ -136,7 +136,8 @@ public class Room implements AutoCloseable {
 						flip(client);
 						break;
 					case ROLL:
-						roll(client, message);
+                        String rollCommand = comm2[1];
+						roll(client, rollCommand);
 						break;
                     default:
                         wasCommand = false;
@@ -164,44 +165,27 @@ public class Room implements AutoCloseable {
 		return temp;
 	}
 
-	protected String formatMessage(String message) {
-		String newMSG = message;
-
-		newMSG = change(newMSG.indexOf("##") > -1, newMSG, "##", "<b>", "</b>");
-		newMSG = change(newMSG.indexOf("**") > -1, newMSG, "\\*\\*", "<u>", "</u>");
-		newMSG = change(newMSG.indexOf("$$") > -1, newMSG, "\\$\\$", "<i>", "</i>");
-		// color for red
-		if (newMSG.indexOf("-r") > -1) {
-			String[] s1 = newMSG.split("\\-");
-			String m = "";
-
-			for (int i = 0; i < s1.length; i++) {
-				if (s1[i].startsWith("r") || s1[i].endsWith("r")) {
-					m += "<font color=\"red\">" + s1[i].substring(2, s1[i].length() - 2) + "</font>";
-				} else {
-					m += s1[i];
-
-				}
-				System.out.println(s1[i]);
-			}
-
-			newMSG = m;
-
-		}
-		if (newMSG.indexOf("-y") > -1) {
-			String[] s1 = newMSG.split("\\-");
-			String m = "";
-
-			for (int i = 0; i < s1.length; i++) {
-				if (s1[i].startsWith("y") || s1[i].endsWith("y")) {
-					m += "<font color=\"yellow\">" + s1[i].substring(2, s1[i].length() - 2) + "</font>";
-				} else {m += s1[i];				}
-				System.out.println(s1[i]);
-			}
-			newMSG = m;
-		}
-		return newMSG;
-	}
+	
+    
+    // Method to replace the triggers in the message with the HTML tags
+    private String processTextFormatting(String message) {
+        // Process bold
+        message = message.replaceAll("\\*\\*(.*?)\\*\\*", "<b>$1</b>");
+    
+        // Process italics
+        message = message.replaceAll("\\*(.*?)\\*", "<i>$1</i>");
+    
+        // Process underline
+        message = message.replaceAll("__(.*?)__", "<u>$1</u>");
+    
+        // Process color
+        message = message.replaceAll("\\[red\\](.*?)\\[/red\\]", "<font color='red'>$1</font>");
+        message = message.replaceAll("\\[green\\](.*?)\\[/green\\]", "<font color='green'>$1</font>");
+        message = message.replaceAll("\\[blue\\](.*?)\\[/blue\\]", "<font color='blue'>$1</font>");
+    
+        return message;
+    }
+    
 
     protected static void getRooms(String query, ServerThread client) {
         String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
@@ -249,10 +233,15 @@ public class Room implements AutoCloseable {
             return;
         }
         logger.info(String.format("Sending message to %s clients", clients.size()));
+        
         if (sender != null && processCommands(message, sender)) {
             // it was a command, don't broadcast
             return;
         }
+        
+        // Apply text formatting to the message
+        message = processTextFormatting(message);
+    
         long from = sender == null ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
         Iterator<ServerThread> iter = clients.iterator();
         while (iter.hasNext()) {
@@ -263,6 +252,7 @@ public class Room implements AutoCloseable {
             }
         }
     }
+    
 
     protected synchronized void sendConnectionStatus(ServerThread sender, boolean isConnected) {
         Iterator<ServerThread> iter = clients.iterator();
@@ -288,40 +278,84 @@ public class Room implements AutoCloseable {
     protected synchronized void flip(ServerThread sender) {
         Random random = new Random();
         boolean isHeads = random.nextBoolean();
-        
-        String message = isHeads ? "-r The Coin is Heads r-" : "-r The Coin is Tails r-";
-        
-        sendMessage(sender, message);
-    }
-
-	protected synchronized void roll(ServerThread sender, String command) {
-        String[] parts = command.split(" ");
-        String format = parts[1];
-        int result;
-     
-        if (format.contains("-")) {
-            // Format 1: /roll 0 - X or 1 - X
-            String[] range = format.split("-");
-            int start = Integer.parseInt(range[0]);
-            int end = Integer.parseInt(range[1]);
-            Random random = new Random();
-            result = random.nextInt(end - start + 1) + start;
+      
+        String message;
+        if (isHeads) {
+          message = " Flipped a coin and got HEADS";
         } else {
-            // Format 2: /roll #d#
-            String[] dice = format.split("d");
-            int numberOfDice = Integer.parseInt(dice[0]);
-            int sides = Integer.parseInt(dice[1]);
-            Random random = new Random();
-            result = 0;
-            for (int i = 0; i < numberOfDice; i++) {
-                result += random.nextInt(sides) + 1;
-            }
+          message = " Flipped a coin and got Tails";
         }
+
+        message = "-r" + message + " r-";
+        sendMessage(sender, processTextFormatting(message));
+      }
+      
+
+      protected synchronized void roll(ServerThread sender, String rollCommand) {
+        // Check for format 1: /roll 0 - X or 1 - X
+        if (rollCommand.matches("^\\d+(\\s-\\s\\d+)?$")) {
+            // Extract min and max values
+            String[] parts = rollCommand.split(" - ");
+            int min;
+            int max;
+            if (parts.length == 1) {
+                min = 1;
+                max = Integer.parseInt(parts[0]);
+            } else {
+                min = Integer.parseInt(parts[0]);
+                max = Integer.parseInt(parts[1]);
+            }
+    
+            if (min > max) {
+                sendMessage(sender, "-r Invalid roll command. The minimum value must be less than or equal to the maximum value. r-");
+                return;
+            }
+    
+            // Generate a random number within the range
+            int result = new Random().nextInt(max - min + 1) + min;
+    
+            // Format and send the result message
+            String resultMessage = "-r You rolled " + result + " r-";
+            sendMessage(sender, processTextFormatting(resultMessage));
+        }
+        // Check for format 2: /roll #d#
+        else if (rollCommand.matches("^\\d+d\\d+$")) {
+            // Extract number of dice and sides
+            String[] parts = rollCommand.split("d");
+            int numDice = Integer.parseInt(parts[0]);
+            int sides = Integer.parseInt(parts[1]);
+    
+            if (numDice <= 0 || sides <= 0) {
+                sendMessage(sender, "-r Invalid dice parameters. Please enter valid values for the dice roll. r-");
+                return;
+            }
+    
+            // Roll the dice and generate results
+            List<Integer> results = new ArrayList<>();
+            for (int i = 0; i < numDice; i++) {
+                results.add(new Random().nextInt(sides) + 1);
+            }
+    
+            // Format the results message
+            String resultMessage = "-r You rolled ";
+            for (int i = 0; i < results.size(); i++) {
+                resultMessage += results.get(i);
+                if (i < results.size() - 1) {
+                    resultMessage += ", ";
+                }
+            }
+            resultMessage += " r-";
+    
+            sendMessage(sender, processTextFormatting(resultMessage));
+        } else {
+            // Invalid format, send error message
+            sendMessage(sender, "-r Invalid roll command. Please use the correct format. r-");
+        }
+    }
+    
      
-        String message = "-r Your Number is " + result + " r-";
-        String newr = formatMessage(message);
-        sendMessage(sender, newr);
-     }
+      
+      
 
     public void close() {
         Server.INSTANCE.removeRoom(this);
