@@ -55,6 +55,7 @@ public class ChatPanel extends JPanel {
         input.add(textValue);
         JButton button = new JButton("Send");
         // lets us submit with the enter key instead of just the button click
+        // UCID:mag DATE:12/9/2023
         textValue.addKeyListener(new KeyListener() {
 
             @Override

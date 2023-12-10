@@ -144,7 +144,13 @@ public class Room implements AutoCloseable {
                         unmuteUser(client, userToUnmute);
                         wasCommand = true;
                         break;
-                        case "WHISPER":
+                /*UCID:mag DATE:12/9/2023
+                 * message is in whisperMessage going to the recipent 
+                 * checks if user, used @ and stores teh targetuser in a list
+                 * split text to take all the info we need and @ is the delimiter
+                 * call on sendprivatemessage
+                 */
+                    case "WHISPER":
                         String whisperMessage = message;
                         if (whisperMessage.indexOf("@") > -1) {
                             List<String> targetedUsers = new ArrayList<String>();
@@ -158,8 +164,7 @@ public class Room implements AutoCloseable {
                             }
                             sendPrivateMessage(client, targetedUsers, whisperMessage);
                         }
-                        break;
-                                         
+                        break;                    
 					default:
 						wasCommand = false;
 						break;
@@ -234,7 +239,7 @@ public class Room implements AutoCloseable {
 
 
 
-
+    //UCID:mag DATE:12/9/2023
     private List<String> mutedUser = new ArrayList<>();
     private boolean muteCheck(String targetUsername, String mutedBy) {
         return mutedUser.contains(targetUsername.toLowerCase() + "_" + mutedBy.toLowerCase());
@@ -347,29 +352,34 @@ public class Room implements AutoCloseable {
 
 
     
-
+    /*UCID:mag DATE:12/9/2023
+     * uses boolean type so it can generate true or false which can work
+     * as true for heads and false for tails.
+     * then sends message depedning if you get get true or false
+     * then surround by the trigger for the boolean opperaters so the text is red
+     */
     protected synchronized void flip(ServerThread sender) {
         Random random = new Random();
         boolean fResult = random.nextBoolean();
-      
         String message;
         if (fResult) {
           message = " Flipped a coin and got HEADS";
         } else {
           message = " Flipped a coin and got Tails";
         }
-
         message = "[red]" + message + "[/red]";
         sendMessage(sender, processTextFormatting(message));
     }
       
 
-
+    //UCID:mag DATE:12/9/2023
     protected synchronized void rollDice(ServerThread sender, String rollCommand) {
         if (rollCommand.matches("^\\d+(\\s-\\s\\d+)?$")) {
+            //conditonal check based on how the command is formated
             String[] rangeParts = rollCommand.split(" - ");
             int minimum;
             int maximum;
+            // for rolling a single dice or roll between two ranges
             if (rangeParts.length == 1) {
                 minimum = 1;
                 maximum = Integer.parseInt(rangeParts[0]);
@@ -377,24 +387,29 @@ public class Room implements AutoCloseable {
                 minimum = Integer.parseInt(rangeParts[0]);
                 maximum = Integer.parseInt(rangeParts[1]);
             }
-    
             if (minimum > maximum) {
-                sendMessage(sender, "[red] Invalid roll command. The minimum value must be less than or equal to the maximum value. [/red]");
+                sendMessage(sender, "[red] Invalid parameters [/red]");
                 return;
             }
-    
             int result = new Random().nextInt(maximum - minimum + 1) + minimum;
             String resultMessage = "[red] You rolled " + result + " out of " + (maximum - minimum + 1) + "[/red]";
             sendMessage(sender, processTextFormatting(resultMessage));
+
+            //UCID:mag DATE:12/9/2023
         } else if (rollCommand.matches("^\\d+d\\d+$")) {
+            //conditonal check based on how the command is formated
             String[] diceParts = rollCommand.split("d");
             int numberOfDice = Integer.parseInt(diceParts[0]);
             int sidesOnDice = Integer.parseInt(diceParts[1]);
-    
+            //takes in how many dice and sides od the dice
+            //takes a result for each dice in the range
             if (numberOfDice <= 0 || sidesOnDice <= 0) {
-                sendMessage(sender, "[red] Invalid dice parameters. Please enter valid values for the dice roll. [/red]");
+                sendMessage(sender, "[red] Invalid parameters. [/red]");
                 return;
             }
+
+            // logic for rolling a dice and sending messages for results
+            //wrapping everything we send with the short cuts of html scripts making it red
             List<Integer> results = new ArrayList<>();
             for (int i = 0; i < numberOfDice; i++) {
                 results.add(new Random().nextInt(sidesOnDice) + 1);
@@ -409,17 +424,22 @@ public class Room implements AutoCloseable {
             resultMessage += " from " + numberOfDice + "d" + sidesOnDice + "[/red]";
             sendMessage(sender, processTextFormatting(resultMessage));
         } else {
-            sendMessage(sender, "[red] Invalid roll command. Please use the correct format. [/red]");
+            sendMessage(sender, "[red] Invalid parameters [/red]");
         }
     }
     
 
-
-    protected synchronized void sendPrivateMessage(ServerThread sender, List<String> dest, String message) {
+    /*UCID:mag DATE:12/9/2023
+     * checks list of clients and checks if the person your trying to whisper is in the list
+     * checks if the user is muted and if not they get the message
+     * also checks if sender is in the list 
+     * 
+    */
+    protected synchronized void sendPrivateMessage(ServerThread sender, List<String> clientNames, String message) {
         long from = (sender == null) ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
     
         for (ServerThread client : clients) {
-            if (dest.contains(client.getClientName().toLowerCase())) {
+            if (clientNames.contains(client.getClientName().toLowerCase())) {
                 if (!muteCheck(client.getClientName(), sender.getClientName())) {
                     boolean messageSent = client.sendMessage(from, message);
                     if (!messageSent) {
@@ -427,7 +447,7 @@ public class Room implements AutoCloseable {
                 }
             }
         }
-        if (!dest.contains(sender.getClientName().toLowerCase())) {
+        if (!clientNames.contains(sender.getClientName().toLowerCase())) {
             boolean senderMessageSent = sender.sendMessage(from, message);
             if (!senderMessageSent) {
             }
