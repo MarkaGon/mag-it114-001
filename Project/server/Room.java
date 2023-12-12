@@ -253,7 +253,7 @@ public class Room implements AutoCloseable {
             ServerThread targetUser = findClientByName(user);
             if (targetUser != null) {
                 mutedUser.add(user.toLowerCase() + "_" + client.getClientName().toLowerCase());
-                targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been muted.");
+                targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been muted by: " + client.getClientName() + "");
                 client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Muted user: " + user);
             } else {
                 client.sendMessage(Constants.DEFAULT_CLIENT_ID, "User not found or already muted.");
@@ -271,7 +271,7 @@ public class Room implements AutoCloseable {
             if (removed) {
                 ServerThread targetUser = findClientByName(username);
                 if (targetUser != null) {
-                    targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been unmuted.");
+                    targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been unmuted by: " + client.getClientName() + "");
                     client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Unmuted user: " + username);
                 }
             } else {
