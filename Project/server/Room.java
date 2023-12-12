@@ -17,6 +17,9 @@ public class Room implements AutoCloseable {
     private final static String COMMAND_TRIGGER = "/";
     private final static String FLIP = "flip";
 	private final static String ROLL = "roll";
+    private final static String MUTE = "mute";
+	private final static String UNMUTE = "unmute";
+    private final static String WHISPER = "whisper";
 	private final static String CREATE_ROOM = "createroom";
 	private final static String JOIN_ROOM = "joinroom";
 	private final static String DISCONNECT = "disconnect";
@@ -134,12 +137,12 @@ public class Room implements AutoCloseable {
                         String rollCommand = comm2[1];
 						rollDice(client, rollCommand);
 						break;
-                    case "MUTE":
+                    case MUTE:
                         String userToMute = comm2[1];
                         muteUser(client, userToMute);
                         wasCommand = true;
                         break;
-                    case "UNMUTE":
+                    case UNMUTE:
                         String userToUnmute = comm2[1];
                         unmuteUser(client, userToUnmute);
                         wasCommand = true;
@@ -150,7 +153,7 @@ public class Room implements AutoCloseable {
                  * split text to take all the info we need and @ is the delimiter
                  * call on sendprivatemessage
                  */
-                    case "WHISPER":
+                    case WHISPER:
                         String whisperMessage = message;
                         if (whisperMessage.indexOf("@") > -1) {
                             List<String> targetedUsers = new ArrayList<String>();
