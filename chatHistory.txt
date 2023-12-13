@@ -1,0 +1,7 @@
+*c Joined the room lobby*
+c: <i> coool</i>
+c: <b>coool</b>
+c: <u>cool</u>
+c: <font color='red'> Flipped a coin and got HEADS</font>
+c: <font color='red'> You rolled 3, 3, 3 from 3d3</font>
+c: <font color='red'> You rolled 1809 out of 3000</font>
