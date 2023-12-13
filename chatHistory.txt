@@ -1,7 +1,8 @@
-*c Joined the room lobby*
-c: <i> coool</i>
-c: <b>coool</b>
-c: <u>cool</u>
-c: <font color='red'> Flipped a coin and got HEADS</font>
-c: <font color='red'> You rolled 3, 3, 3 from 3d3</font>
-c: <font color='red'> You rolled 1809 out of 3000</font>
+*aa Joined the room lobby*
+*ss Joined the room lobby*
+aa: ucid: mag date: 12/13/23
+aa: <font color='red'> Flipped a coin and got Tails</font>
+aa: <font color='red'> You rolled 1, 2, 3 from 3d3</font>
+aa: <font color='red'> You rolled 2184 out of 3000</font>
+Server: Muted user: ss
+Server: Unmuted user: ss
