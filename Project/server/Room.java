@@ -1,9 +1,4 @@
 package Project.server;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -37,7 +32,6 @@ public class Room implements AutoCloseable {
     public Room(String name) {
         this.name = name;
         isRunning = true;
-        loadMuteListFromFile();
     }
     public String getName() {
         return name;
@@ -246,23 +240,6 @@ public class Room implements AutoCloseable {
         checkClients();
     }
 
-    public void saveMuteListToFile() {
-        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("muteList.txt"))) {
-            outputStream.writeObject(mutedUser);
-        } catch (IOException e) {
-            logger.severe("Error saving mute list to file: " + e.getMessage());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public void loadMuteListFromFile() {
-        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("muteList.txt"))) {
-            mutedUser = (List<String>) inputStream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            logger.severe("Error loading mute list from file: " + e.getMessage());
-        }
-    }
-
 
 
     //UCID:mag DATE:12/9/2023
@@ -271,7 +248,7 @@ public class Room implements AutoCloseable {
         return mutedUser.contains(targetUsername.toLowerCase() + "_" + mutedBy.toLowerCase());
     }
 
-
+    
     public synchronized void muteUser(ServerThread client, String targetUserName) {
         String user = getUser(targetUserName);
         if (user != null) {
@@ -286,7 +263,6 @@ public class Room implements AutoCloseable {
         } else {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Invalid username provided.");
         }
-        saveMuteListToFile();
     }
 
     
@@ -306,7 +282,6 @@ public class Room implements AutoCloseable {
         } else {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Invalid username provided.");
         }
-        saveMuteListToFile();
     }
     
 

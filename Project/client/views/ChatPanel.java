@@ -35,7 +35,7 @@ public class ChatPanel extends JPanel {
     private static Logger logger = Logger.getLogger(ChatPanel.class.getName());
     private JPanel chatArea = null;
     private UserListPanel userListPanel;
-    private ArrayList<String> chatHistory = new ArrayList<>();
+    private ArrayList<String> chatHistoryExport = new ArrayList<>();
 
     public ChatPanel(ICardControls controls){
         super(new BorderLayout(10, 10));
@@ -158,7 +158,7 @@ public class ChatPanel extends JPanel {
 
     public void exportChatHistory() throws IOException {
         try (PrintWriter writer = new PrintWriter(new FileWriter("chatHistory.txt"))) {
-            for (String message : chatHistory) {
+            for (String message : chatHistoryExport) {
                 writer.println(message);
             }
         }
@@ -191,6 +191,6 @@ public class ChatPanel extends JPanel {
         // scroll down on new message
         JScrollBar vertical = ((JScrollPane) chatArea.getParent().getParent()).getVerticalScrollBar();
         vertical.setValue(vertical.getMaximum());
-        chatHistory.add(text);
+        chatHistoryExport.add(text);
     }
 }
