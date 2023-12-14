@@ -9,7 +9,10 @@ import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +35,8 @@ public class ChatPanel extends JPanel {
     private static Logger logger = Logger.getLogger(ChatPanel.class.getName());
     private JPanel chatArea = null;
     private UserListPanel userListPanel;
+    private ArrayList<String> chatHistory = new ArrayList<>();
+
     public ChatPanel(ICardControls controls){
         super(new BorderLayout(10, 10));
         JPanel wrapper = new JPanel();
@@ -139,7 +144,26 @@ public class ChatPanel extends JPanel {
                 // System.out.println("Moved to " + e.getComponent().getLocation());
             }
         });
+
+        JButton exportButton = new JButton("Export Chat History");
+        exportButton.addActionListener((event) -> {
+            try {
+                exportChatHistory();
+            } catch (IOException e) {
+                logger.severe("Error exporting chat history: " + e.getMessage());
+            }
+        });
+        input.add(exportButton);
     }
+
+    public void exportChatHistory() throws IOException {
+        try (PrintWriter writer = new PrintWriter(new FileWriter("chatHistory.txt"))) {
+            for (String message : chatHistory) {
+                writer.println(message);
+            }
+        }
+    }
+
     public void addUserListItem(long clientId, String clientName){
         userListPanel.addUserListItem(clientId, clientName);
     }
@@ -167,5 +191,6 @@ public class ChatPanel extends JPanel {
         // scroll down on new message
         JScrollBar vertical = ((JScrollPane) chatArea.getParent().getParent()).getVerticalScrollBar();
         vertical.setValue(vertical.getMaximum());
+        chatHistory.add(text);
     }
 }

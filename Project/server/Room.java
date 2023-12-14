@@ -1,4 +1,9 @@
 package Project.server;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -17,6 +22,9 @@ public class Room implements AutoCloseable {
     private final static String COMMAND_TRIGGER = "/";
     private final static String FLIP = "flip";
 	private final static String ROLL = "roll";
+    private final static String MUTE = "mute";
+	private final static String UNMUTE = "unmute";
+    private final static String WHISPER = "whisper";
 	private final static String CREATE_ROOM = "createroom";
 	private final static String JOIN_ROOM = "joinroom";
 	private final static String DISCONNECT = "disconnect";
@@ -29,6 +37,7 @@ public class Room implements AutoCloseable {
     public Room(String name) {
         this.name = name;
         isRunning = true;
+        loadMuteListFromFile();
     }
     public String getName() {
         return name;
@@ -134,12 +143,12 @@ public class Room implements AutoCloseable {
                         String rollCommand = comm2[1];
 						rollDice(client, rollCommand);
 						break;
-                    case "MUTE":
+                    case MUTE:
                         String userToMute = comm2[1];
                         muteUser(client, userToMute);
                         wasCommand = true;
                         break;
-                    case "UNMUTE":
+                    case UNMUTE:
                         String userToUnmute = comm2[1];
                         unmuteUser(client, userToUnmute);
                         wasCommand = true;
@@ -150,7 +159,7 @@ public class Room implements AutoCloseable {
                  * split text to take all the info we need and @ is the delimiter
                  * call on sendprivatemessage
                  */
-                    case "WHISPER":
+                    case WHISPER:
                         String whisperMessage = message;
                         if (whisperMessage.indexOf("@") > -1) {
                             List<String> targetedUsers = new ArrayList<String>();
@@ -237,6 +246,23 @@ public class Room implements AutoCloseable {
         checkClients();
     }
 
+    public void saveMuteListToFile() {
+        try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("muteList.txt"))) {
+            outputStream.writeObject(mutedUser);                                    //ucid:mag date: 12/13/23
+        } catch (IOException e) {
+            logger.severe("Error saving mute list to file: " + e.getMessage());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void loadMuteListFromFile() {
+        try (ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream("muteList.txt"))) {
+            mutedUser = (List<String>) inputStream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            logger.severe("Error loading mute list from file: " + e.getMessage());
+        }
+    }
+
 
 
     //UCID:mag DATE:12/9/2023
@@ -246,14 +272,13 @@ public class Room implements AutoCloseable {
     }
 
 
-    
     public synchronized void muteUser(ServerThread client, String targetUserName) {
         String user = getUser(targetUserName);
         if (user != null) {
             ServerThread targetUser = findClientByName(user);
             if (targetUser != null) {
                 mutedUser.add(user.toLowerCase() + "_" + client.getClientName().toLowerCase());
-                targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been muted.");
+                targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been muted by: " + client.getClientName() + "");
                 client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Muted user: " + user);
             } else {
                 client.sendMessage(Constants.DEFAULT_CLIENT_ID, "User not found or already muted.");
@@ -261,9 +286,10 @@ public class Room implements AutoCloseable {
         } else {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Invalid username provided.");
         }
+        saveMuteListToFile();
     }
 
-    
+    // ucid:mag date:11/13/23
     public synchronized void unmuteUser(ServerThread client, String targetUserName) {
         String username = getUser(targetUserName);
         if (username != null) {
@@ -271,7 +297,7 @@ public class Room implements AutoCloseable {
             if (removed) {
                 ServerThread targetUser = findClientByName(username);
                 if (targetUser != null) {
-                    targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been unmuted.");
+                    targetUser.sendMessage(Constants.DEFAULT_CLIENT_ID, "You have been unmuted by: " + client.getClientName() + "");
                     client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Unmuted user: " + username);
                 }
             } else {
@@ -280,6 +306,7 @@ public class Room implements AutoCloseable {
         } else {
             client.sendMessage(Constants.DEFAULT_CLIENT_ID, "Invalid username provided.");
         }
+        saveMuteListToFile();
     }
     
 
