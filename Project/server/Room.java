@@ -248,7 +248,7 @@ public class Room implements AutoCloseable {
 
     public void saveMuteListToFile() {
         try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("muteList.txt"))) {
-            outputStream.writeObject(mutedUser);
+            outputStream.writeObject(mutedUser);                                    //ucid:mag date: 12/13/23
         } catch (IOException e) {
             logger.severe("Error saving mute list to file: " + e.getMessage());
         }
@@ -289,7 +289,7 @@ public class Room implements AutoCloseable {
         saveMuteListToFile();
     }
 
-    
+    // ucid:mag date:11/13/23
     public synchronized void unmuteUser(ServerThread client, String targetUserName) {
         String username = getUser(targetUserName);
         if (username != null) {
